@@ -43,19 +43,34 @@ local DiscordID = "<@1453603930209648670>"
 local KillSwitchURL = "https://raw.githubusercontent.com/AshWish-ASU/AshWish-Project/main/status.txt"
 
 ---------------------------------------------------------
--- GITHUB REMOTE KILL-SWITCH (CACHE BUSTED & FORMAT FIXED)
+-- GITHUB REMOTE KILL-SWITCH (ULTIMATE CACHE BYPASS)
 ---------------------------------------------------------
 task.spawn(function()
-    while task.wait(30) do -- Reduced to 30 seconds for faster response
+    while task.wait(30) do 
         pcall(function()
-            -- Generate a completely random GUID to guarantee Roblox fetches a fresh file
             local noCacheUrl = KillSwitchURL .. "?nocache=" .. HttpService:GenerateGUID(false)
-            local status = game:HttpGet(noCacheUrl)
+            local statusText = ""
             
-            if status then
+            -- Force strict no-cache headers if the executor supports advanced HTTP requests
+            local httprequest = (syn and syn.request) or (http and http.request) or http_request or request
+            if httprequest then
+                local res = httprequest({
+                    Url = noCacheUrl,
+                    Method = "GET",
+                    Headers = {
+                        ["Cache-Control"] = "no-cache, no-store, must-revalidate",
+                        ["Pragma"] = "no-cache",
+                        ["Expires"] = "0"
+                    }
+                })
+                if res and res.Body then statusText = res.Body end
+            else
+                statusText = game:HttpGet(noCacheUrl)
+            end
+            
+            if statusText and statusText ~= "" then
                 -- This removes ALL invisible spaces and newlines that GitHub adds to files
-                local cleanStatus = string.gsub(status, "%s+", "")
-                
+                local cleanStatus = string.gsub(statusText, "%s+", "")
                 if string.find(cleanStatus:upper(), "STOP") then
                     isFarming = false
                     localPlayer:Kick("Cloud Kill-Switch Activated: Session terminated remotely from GitHub.")
@@ -313,11 +328,12 @@ if CoreGui:FindFirstChild("SleekStatTracker") then CoreGui.SleekStatTracker:Dest
 
 local trackerGui = Instance.new("ScreenGui")
 trackerGui.Name = "SleekStatTracker"
+trackerGui.IgnoreGuiInset = true -- This forces the UI to ignore the invisible Roblox top bar gap
 trackerGui.Parent = CoreGui
 
 local trackerFrame = Instance.new("Frame")
 trackerFrame.Size = UDim2.new(0, 280, 0, 105) 
-trackerFrame.Position = UDim2.new(0, 15, 0.45, 0)
+trackerFrame.Position = UDim2.new(1, -290, 0, 10) -- Perfectly pinned to the top right corner
 trackerFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 trackerFrame.BorderSizePixel = 0
 trackerFrame.Active = true
@@ -376,7 +392,7 @@ end)
 -- RAYFIELD MAIN WINDOW 
 ---------------------------------------------------------
 local Window = Rayfield:CreateWindow({
-   Name = "AshWish Ultimate",
+   Name = "AshWish",
    LoadingTitle = "AshWish Loading",
    LoadingSubtitle = "Optimized Clean",
    ConfigurationSaving = { Enabled = false },
@@ -532,10 +548,10 @@ TeleportToggleObj = AutoFarmTab:CreateToggle({
 
 AutoFarmTab:CreateSection("Anti-Cheat Options")
 
--- OPTIMIZED ANTI-AFK: NOW TOGGLED OFF BY DEFAULT
-AutoFarmTab:CreateToggle({
+local AntiAfkToggleObj
+AntiAfkToggleObj = AutoFarmTab:CreateToggle({
     Name = "Anti-AFK",
-    CurrentValue = false, -- SET TO FALSE HERE
+    CurrentValue = false, 
     Flag = "AntiCheatFix",
     Callback = function(Value)
         Toggles.VirtualTap = Value
@@ -557,7 +573,8 @@ end)
 ---------------------------------------------------------
 ProtectionTab:CreateSection("Performance Boost")
 
-ProtectionTab:CreateButton({
+local FpsBoosterBtnObj
+FpsBoosterBtnObj = ProtectionTab:CreateButton({
     Name = "FPS Booster",
     Callback = function()
         settings().Rendering.QualityLevel = 1
@@ -579,10 +596,10 @@ ProtectionTab:CreateButton({
 
 ProtectionTab:CreateSection("Network Failsafes")
 
--- AUTO-RECONNECT: NOW TOGGLED OFF BY DEFAULT
-ProtectionTab:CreateToggle({
+local AutoReconnectToggleObj
+AutoReconnectToggleObj = ProtectionTab:CreateToggle({
     Name = "Instant Auto-Reconnect Mobile",
-    CurrentValue = false, -- SET TO FALSE HERE
+    CurrentValue = false, 
     Flag = "AutoReconnectToggle",
     Callback = function(Value)
         Toggles.AutoReconnect = Value
@@ -637,7 +654,8 @@ task.spawn(function()
     end)
 end)
 
-ProtectionTab:CreateToggle({
+local AntiLagToggleObj
+AntiLagToggleObj = ProtectionTab:CreateToggle({
     Name = "Anti-Lag Server Hop",
     CurrentValue = false,
     Flag = "AntiLagToggle",
@@ -665,7 +683,8 @@ ProtectionTab:CreateToggle({
 
 ProtectionTab:CreateSection("Mod & Admin Detection")
 
-ProtectionTab:CreateToggle({
+local AntiModToggleObj
+AntiModToggleObj = ProtectionTab:CreateToggle({
     Name = "Anti-Mod Server Hop",
     CurrentValue = false,
     Flag = "AntiModToggle",
@@ -1521,7 +1540,7 @@ if isPC then
 end
 
 Rayfield:Notify({
-    Title = "AshWish Ultimate Injected",
+    Title = "AshWish Injected",
     Content = "All failsafes active and running.",
     Duration = 5,
     Image = 4483362458,
@@ -1538,10 +1557,37 @@ if shouldResumeFarm then
         local leaderstats = localPlayer:WaitForChild("leaderstats", 15)
         if leaderstats then leaderstats:WaitForChild("Level", 15) end
         workspace:WaitForChild("dummies", 15)
-        task.wait(2) 
         
+        -- Wait 5 seconds to ensure Waterbeam fully loads into inventory
+        task.wait(5) 
+        
+        -- Automatically toggle EVERY option in Auto Farming & Protection back ON
         pcall(function() if FarmToggleObj then FarmToggleObj:Set(true) end end)
-        task.wait(0.5)
+        task.wait(0.2)
         pcall(function() if TeleportToggleObj then TeleportToggleObj:Set(true) end end)
+        task.wait(0.2)
+        pcall(function() if AntiAfkToggleObj then AntiAfkToggleObj:Set(true) end end)
+        task.wait(0.2)
+        pcall(function() if AutoReconnectToggleObj then AutoReconnectToggleObj:Set(true) end end)
+        task.wait(0.2)
+        pcall(function() if AntiLagToggleObj then AntiLagToggleObj:Set(true) end end)
+        task.wait(0.2)
+        pcall(function() if AntiModToggleObj then AntiModToggleObj:Set(true) end end)
+        
+        -- Automatically trigger the FPS Booster sequence manually
+        pcall(function()
+            settings().Rendering.QualityLevel = 1
+            settings().Network.IncomingReplicationLag = 0
+            game.Lighting.GlobalShadows = false
+            game.Lighting.FogEnd = 9e9
+            for _, obj in pairs(workspace:GetDescendants()) do
+                if obj:IsA("BasePart") then
+                    obj.Material = Enum.Material.SmoothPlastic
+                    obj.CastShadow = false
+                elseif obj:IsA("Decal") or obj:IsA("Texture") or obj:IsA("ParticleEmitter") then
+                    obj:Destroy()
+                end
+            end
+        end)
     end)
 end
