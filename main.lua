@@ -11,7 +11,9 @@ local VirtualInputManager = game:GetService("VirtualInputManager")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local GuiService = game:GetService("GuiService")
+local LogService = game:GetService("LogService")
 local Stats = game:GetService("Stats")
+local CoreGui = game:GetService("CoreGui")
 local localPlayer = Players.LocalPlayer
 local mouse = localPlayer:GetMouse()
 
@@ -35,16 +37,31 @@ local mFloor = math.floor
 local v3New = Vector3.new
 local cfNew = CFrame.new
 
--- Hardcoded Webhook URL & Discord ID
+-- Hardcoded Webhook URL & GitHub Kill Switch
 local UserWebhookURL = "https://discord.com/api/webhooks/1485790793833906329/QsnuKoZQvFtu-bm3w_hyuuwoHl7eAxU7F-4ls9wDgzwGE99tORY4zbuUUI_HZDBQThSh"
 local DiscordID = "<@1453603930209648670>"
+local KillSwitchURL = "https://raw.githubusercontent.com/AshWish-ASU/AshWish-Project/main/status.txt"
+
+---------------------------------------------------------
+-- GITHUB REMOTE KILL-SWITCH
+---------------------------------------------------------
+task.spawn(function()
+    while task.wait(60) do
+        pcall(function()
+            local status = game:HttpGet(KillSwitchURL)
+            if status and string.match(status:upper(), "STOP") then
+                isFarming = false
+                localPlayer:Kick("Cloud Kill-Switch Activated: Session terminated remotely from GitHub.")
+            end
+        end)
+    end
+end)
 
 -- Autoexec State Saver Check
 local shouldResumeFarm = false
 pcall(function()
     if isfile and readfile and isfile("ROTEX_HopState.txt") then
         local state = readfile("ROTEX_HopState.txt")
-        -- string.find is safer than == in case Android adds hidden spaces
         if state and string.find(state, "resume_farm") then
             shouldResumeFarm = true
             if writefile then writefile("ROTEX_HopState.txt", "idle") end 
@@ -82,7 +99,6 @@ local function SendEmergencyPing(title, reason, color)
     end
 end
 
--- Helper for D/H/M/S formatting
 local function FormatSessionTime(seconds)
     local days = mFloor(seconds / 86400)
     seconds = seconds % 86400
@@ -93,17 +109,13 @@ local function FormatSessionTime(seconds)
     return string.format("%02dd %02dh %02dm %02ds", days, hours, minutes, secs)
 end
 
--- SHARED VISUAL VARIABLES 
 local sharedVisualColor = Color3.fromRGB(255, 50, 50)
 local rainbowVisuals = false
 
 RunService.RenderStepped:Connect(function()
-    if rainbowVisuals then
-        sharedVisualColor = Color3.fromHSV(tick() % 4 / 4, 1, 1)
-    end
+    if rainbowVisuals then sharedVisualColor = Color3.fromHSV(tick() % 4 / 4, 1, 1) end
 end)
 
--- SMART NUMBER FORMATTER 
 local function FormatNum(value)
     local n = tonumber(value) or 0
     n = mFloor(n)
@@ -116,8 +128,18 @@ local function FormatNum(value)
     return formatted
 end
 
+local function ParseNumber(str)
+    str = string.lower(string.gsub(str, "[, ]", ""))
+    local mult = 1
+    if string.find(str, "k$") then mult = 1000; str = string.gsub(str, "k$", "") end
+    if string.find(str, "m$") then mult = 1000000; str = string.gsub(str, "m$", "") end
+    if string.find(str, "b$") then mult = 1000000000; str = string.gsub(str, "b$", "") end
+    local num = tonumber(str)
+    return num and (num * mult) or 0
+end
+
 ---------------------------------------------------------
--- NETWORK INTERCEPTOR 
+-- NETWORK INTERCEPTOR (Kill Aura Logic)
 ---------------------------------------------------------
 local KillAuraTargetHrp = nil
 local FixedTargetPos = Vector3.new(255.390686, 267.746063, 1106.12268)
@@ -176,6 +198,28 @@ local function GetTimeUsedString()
     local mi = mFloor(t / 60)
     local s = t % 60
     return string.format("%02d/%02d/%02d/%02d/%02d/%02d/%02d", y, mo, w, d, h, mi, s)
+end
+
+---------------------------------------------------------
+-- DUMMY KNOWLEDGE DATABASE
+---------------------------------------------------------
+local dummyData = {
+    {Name = "TrainingDummy1", Req = 1, Mult = 1}, 
+    {Name = "TrainingDummy2", Req = 250, Mult = 2}, 
+    {Name = "TrainingDummy3", Req = 500, Mult = 3},
+    {Name = "TrainingDummy4", Req = 1000, Mult = 4}, 
+    {Name = "TrainingDummy5", Req = 2000, Mult = 5}, 
+    {Name = "TrainingDummy6", Req = 4000, Mult = 6},
+    {Name = "TrainingDummy7", Req = 8000, Mult = 7}, 
+    {Name = "TrainingDummy8", Req = 16000, Mult = 8}, 
+    {Name = "TrainingDummy9", Req = 26000, Mult = 9},
+    {Name = "TrainingDummy10", Req = 36000, Mult = 10}
+}
+
+local function getLevel()
+    local level = 0
+    pcall(function() level = localPlayer.leaderstats.Level.Value end)
+    return level
 end
 
 ---------------------------------------------------------
@@ -254,44 +298,9 @@ end
 local rollingGains = {}
 local rollingSum = 0
 
-local function getLevel()
-    local level = 0
-    pcall(function() level = localPlayer.leaderstats.Level.Value end)
-    return level
-end
-
----------------------------------------------------------
--- BULLETPROOF MOBILE ANTI-AFK
----------------------------------------------------------
-pcall(function()
-    if getconnections then
-        for _, conn in ipairs(getconnections(localPlayer.Idled)) do conn:Disable() end
-    else
-        localPlayer.Idled:Connect(function() VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Unknown, false, game) end)
-    end
-end)
-task.spawn(function() while task.wait(600) do collectgarbage("collect") end end)
-
----------------------------------------------------------
--- DUMMY KNOWLEDGE DATABASE
----------------------------------------------------------
-local dummyData = {
-    {Name = "TrainingDummy1", Req = 1, Mult = 1}, 
-    {Name = "TrainingDummy2", Req = 250, Mult = 2}, 
-    {Name = "TrainingDummy3", Req = 500, Mult = 3},
-    {Name = "TrainingDummy4", Req = 1000, Mult = 4}, 
-    {Name = "TrainingDummy5", Req = 2000, Mult = 5}, 
-    {Name = "TrainingDummy6", Req = 4000, Mult = 6},
-    {Name = "TrainingDummy7", Req = 8000, Mult = 7}, 
-    {Name = "TrainingDummy8", Req = 16000, Mult = 8}, 
-    {Name = "TrainingDummy9", Req = 26000, Mult = 9},
-    {Name = "TrainingDummy10", Req = 36000, Mult = 10}
-}
-
 ---------------------------------------------------------
 -- THE SOLID BLACK STAT TRACKER UI
 ---------------------------------------------------------
-local CoreGui = game:GetService("CoreGui")
 if CoreGui:FindFirstChild("SleekStatTracker") then CoreGui.SleekStatTracker:Destroy() end
 
 local trackerGui = Instance.new("ScreenGui")
@@ -379,6 +388,7 @@ local MiscTab     = Window:CreateTab("Misc", 4483362458)
 -- 1. AUTO FARMING TAB
 ---------------------------------------------------------
 local farmingThread = nil
+local bossConnection = nil
 
 local function TeleportToBestDummy()
     local char = localPlayer.Character
@@ -389,10 +399,7 @@ local function TeleportToBestDummy()
     local bestDummyData = nil
     
     for i = #dummyData, 1, -1 do
-        if playerLevel >= dummyData[i].Req then
-            bestDummyData = dummyData[i]
-            break 
-        end
+        if playerLevel >= dummyData[i].Req then bestDummyData = dummyData[i]; break end
     end
 
     if bestDummyData then
@@ -407,24 +414,11 @@ local function TeleportToBestDummy()
     end
 end
 
-AutoFarmTab:CreateSection("Auto Farm Options")
-
-local TeleportToggleObj
-TeleportToggleObj = AutoFarmTab:CreateToggle({
-   Name = "Auto-Teleport to Dummy",
-   CurrentValue = false,
-   Flag = "TeleportToggle",
-   Callback = function(Value) 
-       Toggles.AutoTeleport = Value 
-       if Value then
-           TeleportToBestDummy()
-       end
-   end,
-})
+AutoFarmTab:CreateSection("Core Farm Options")
 
 local FarmToggleObj
 FarmToggleObj = AutoFarmTab:CreateToggle({
-   Name = "Smart Farm",
+   Name = "Auto Farm All",
    CurrentValue = false,
    Flag = "FarmToggle",
    Callback = function(Value)
@@ -433,6 +427,21 @@ FarmToggleObj = AutoFarmTab:CreateToggle({
         if Value then
             startLevel = getLevel()
             startTime = os.time()
+            
+            pcall(function()
+                local npcFolder = workspace:FindFirstChild("Boss") and workspace.Boss:FindFirstChild("NPC") or workspace:FindFirstChild("NPC")
+                if npcFolder then
+                    bossConnection = npcFolder.ChildAdded:Connect(function(obj)
+                        if Toggles.GodFarm and string.match(obj.Name:upper(), "BOSS") then
+                            local hum = obj:WaitForChild("Humanoid", 2)
+                            if hum and hum.Health > 0 then
+                                ReplicatedStorage.DamageEvent:FireServer({["multiply"] = 1, ["action"] = "hit", ["enemyHum"] = hum})
+                            end
+                        end
+                    end)
+                end
+            end)
+
             farmingThread = task.spawn(function()
                 while Toggles.GodFarm do
                     local char = localPlayer.Character
@@ -449,10 +458,7 @@ FarmToggleObj = AutoFarmTab:CreateToggle({
 
                     local bestDummyData = nil
                     for i = #dummyData, 1, -1 do
-                        if playerLevel >= dummyData[i].Req then
-                            bestDummyData = dummyData[i]
-                            break 
-                        end
+                        if playerLevel >= dummyData[i].Req then bestDummyData = dummyData[i]; break end
                     end
 
                     local targetsToHit = {}
@@ -469,19 +475,16 @@ FarmToggleObj = AutoFarmTab:CreateToggle({
                                 end
                                 hrp.CFrame = CFrame.lookAt(hrp.Position, v3New(dummyHrp.Position.X, hrp.Position.Y, dummyHrp.Position.Z))
                             end
-                            
-                            local finalMult = bestDummyData.Mult
-                            table.insert(targetsToHit, {hum = obj.Humanoid, mult = finalMult, isDummy = true, hrp = dummyHrp})
+                            table.insert(targetsToHit, {hum = obj.Humanoid, mult = bestDummyData.Mult})
                         end
                     end
 
                     pcall(function()
-                        local npcFolder = workspace:FindFirstChild("Boss") and workspace.Boss:FindFirstChild("NPC")
-                        if not npcFolder then npcFolder = workspace:FindFirstChild("NPC") end
+                        local npcFolder = workspace:FindFirstChild("Boss") and workspace.Boss:FindFirstChild("NPC") or workspace:FindFirstChild("NPC")
                         if npcFolder then
                             for _, obj in ipairs(npcFolder:GetChildren()) do
-                                if string.match(obj.Name:upper(), "BOSS") and obj:FindFirstChild("Humanoid") then
-                                    table.insert(targetsToHit, {hum = obj.Humanoid, mult = 1, isDummy = false})
+                                if string.match(obj.Name:upper(), "BOSS") and obj:FindFirstChild("Humanoid") and obj.Humanoid.Health > 0 then
+                                    table.insert(targetsToHit, {hum = obj.Humanoid, mult = 1})
                                 end
                             end
                         end
@@ -492,65 +495,79 @@ FarmToggleObj = AutoFarmTab:CreateToggle({
                             task.spawn(function()
                                 pcall(function()
                                     ReplicatedStorage.DamageEvent:FireServer({["multiply"] = target.mult, ["action"] = "hit", ["enemyHum"] = target.hum})
-                                    if waterbeamTool and waterbeamTool.Parent == char then
-                                        waterbeamTool:Activate() 
-                                    end
+                                    if waterbeamTool and waterbeamTool.Parent == char then waterbeamTool:Activate() end
                                 end)
                             end)
                         end
                     end
-                    task.wait(0.1) 
+                    
+                    task.wait(math.random(8, 12) / 100) 
                 end
             end)
         else
             if farmingThread then task.cancel(farmingThread); farmingThread = nil end
+            if bossConnection then bossConnection:Disconnect(); bossConnection = nil end
         end
+   end,
+})
+
+local TeleportToggleObj
+TeleportToggleObj = AutoFarmTab:CreateToggle({
+   Name = "Auto-Teleport to Dummy",
+   CurrentValue = false,
+   Flag = "TeleportToggle",
+   Callback = function(Value) 
+       Toggles.AutoTeleport = Value 
+       if Value then TeleportToBestDummy() end
    end,
 })
 
 AutoFarmTab:CreateSection("Anti-Cheat Options")
 
+-- OPTIMIZED ANTI-AFK
 AutoFarmTab:CreateToggle({
-    Name = "Virtual Screen Tapping",
-    CurrentValue = false,
+    Name = "Anti-AFK",
+    CurrentValue = true,
     Flag = "AntiCheatFix",
     Callback = function(Value)
         Toggles.VirtualTap = Value
-        if Value then
-            task.spawn(function()
-                while Toggles.VirtualTap do
-                    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Unknown, false, game)
-                    task.wait(0.1)
-                end
-            end)
-        end
     end,
 })
+
+localPlayer.Idled:Connect(function()
+    if Toggles.VirtualTap then
+        VirtualUser:CaptureController()
+        VirtualUser:ClickButton2(Vector2.new())
+        -- Secondary failsafe
+        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.RightShift, false, game)
+        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.RightShift, false, game)
+    end
+end)
 
 ---------------------------------------------------------
 -- 2. PROTECTION TAB
 ---------------------------------------------------------
-ProtectionTab:CreateSection("Security Radars")
+ProtectionTab:CreateSection("Performance Boost")
 
-ProtectionTab:CreateToggle({
-    Name = "Anti-Mod Creator Radar",
-    CurrentValue = false,
-    Flag = "AntiModToggle",
-    Callback = function(Value)
-        Toggles.AntiMod = Value
+ProtectionTab:CreateButton({
+    Name = "FPS Booster",
+    Callback = function()
+        settings().Rendering.QualityLevel = 1
+        settings().Network.IncomingReplicationLag = 0
+        game.Lighting.GlobalShadows = false
+        game.Lighting.FogEnd = 9e9
+        
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if obj:IsA("BasePart") then
+                obj.Material = Enum.Material.SmoothPlastic
+                obj.CastShadow = false
+            elseif obj:IsA("Decal") or obj:IsA("Texture") or obj:IsA("ParticleEmitter") then
+                obj:Destroy()
+            end
+        end
+        Rayfield:Notify({Title = "FPS Boosted", Content = "Textures & particles cleared safely.", Duration = 3})
     end,
 })
-
-Players.PlayerAdded:Connect(function(plr)
-    if Toggles.AntiMod then
-        if plr:GetRankInGroup(game.CreatorId) > 0 or string.match(plr.Name:lower(), "admin") then
-            SendEmergencyPing("🚨 MOD DETECTED - HOPPING SERVERS 🚨", "Developer or Mod " .. plr.Name .. " joined the lobby. Forcing an emergency server hop to protect the account.", tonumber(0xFF0000))
-            WriteHopState()
-            task.wait(1)
-            TeleportService:Teleport(game.PlaceId, localPlayer)
-        end
-    end
-end)
 
 ProtectionTab:CreateSection("Network Failsafes")
 
@@ -564,31 +581,44 @@ ProtectionTab:CreateToggle({
 })
 
 task.spawn(function()
-    while task.wait(2) do
-        if Toggles.AutoReconnect then
-            pcall(function()
-                local errorCode = GuiService:GetErrorCode()
-                if errorCode.Value ~= 0 then 
-                    SendEmergencyPing("⚠️ GAME CRASHED - RECONNECTING ⚠️", "Connection Error Code: " .. tostring(errorCode.Value) .. " Triggered. The script is forcing a rejoin.", tonumber(0xFFA500))
-                    WriteHopState()
-                    task.spawn(function()
-                        while true do
-                            pcall(function()
-                                if game.JobId ~= "" then 
-                                    TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, localPlayer)
-                                else 
-                                    TeleportService:Teleport(game.PlaceId, localPlayer) 
-                                end
-                            end)
-                            task.wait(10) 
-                        end
-                    end)
-                    Toggles.AutoReconnect = false 
-                    task.wait(999999) 
-                end
-            end)
-        end
+    local reconnecting = false
+    local function forceRejoin()
+        if reconnecting then return end
+        reconnecting = true
+        SendEmergencyPing("⚠️ DISCONNECT - REJOINING ⚠️", "Error detected. Re-routing to a new server.", tonumber(0xFFA500))
+        WriteHopState()
+        task.wait(1)
+        pcall(function() TeleportService:Teleport(game.PlaceId, localPlayer) end)
     end
+
+    -- Method 1: GuiService
+    pcall(function()
+        GuiService.ErrorMessageChanged:Connect(function()
+            if Toggles.AutoReconnect then
+                local err = GuiService:GetErrorCode()
+                if err and err.Value ~= 0 then forceRejoin() end
+            end
+        end)
+    end)
+    
+    -- Method 2: CoreGui ErrorPrompt
+    pcall(function()
+        CoreGui.RobloxPromptGui.promptOverlay.ChildAdded:Connect(function(child)
+            if Toggles.AutoReconnect and child.Name == "ErrorPrompt" then forceRejoin() end
+        end)
+    end)
+
+    -- Method 3: LogService Catch-all
+    pcall(function()
+        LogService.MessageOut:Connect(function(Message, Type)
+            if Toggles.AutoReconnect and Type == Enum.MessageType.MessageError then
+                local lowerMsg = string.lower(Message)
+                if string.find(lowerMsg, "disconnect") or string.find(lowerMsg, "kicked") then
+                    forceRejoin()
+                end
+            end
+        end)
+    end)
 end)
 
 ProtectionTab:CreateToggle({
@@ -604,7 +634,7 @@ ProtectionTab:CreateToggle({
                         local pingString = Stats.Network.ServerStatsItem["Data Ping"]:GetValueString()
                         local currentPing = tonumber(string.match(pingString, "%d+"))
                         if currentPing and currentPing >= 750 then
-                            SendEmergencyPing("📡 SEVERE LAG - HOPPING SERVERS 📡", "Ping spiked to " .. currentPing .. "ms. The script is automatically hopping to a better server to maintain max XP rates.", tonumber(0x800080))
+                            SendEmergencyPing("📡 SEVERE LAG - HOPPING SERVERS 📡", "Ping spiked. The script is automatically hopping.", tonumber(0x800080))
                             WriteHopState()
                             task.wait(1)
                             TeleportService:Teleport(game.PlaceId, localPlayer)
@@ -617,32 +647,27 @@ ProtectionTab:CreateToggle({
     end,
 })
 
-ProtectionTab:CreateSection("Hardware Optimization")
+ProtectionTab:CreateSection("Mod & Admin Detection")
 
 ProtectionTab:CreateToggle({
-    Name = "Optimize Farming",
+    Name = "Anti-Mod Server Hop",
     CurrentValue = false,
-    Flag = "CryoModeToggle",
+    Flag = "AntiModToggle",
     Callback = function(Value)
-        if Value then
-            settings().Rendering.QualityLevel = 1
-            for _, obj in pairs(workspace:GetDescendants()) do
-                if obj:IsA("BasePart") then
-                    obj.Material = Enum.Material.SmoothPlastic
-                    obj.CastShadow = false
-                elseif obj:IsA("Decal") or obj:IsA("Texture") then
-                    obj:Destroy()
-                end
-            end
-            game.Lighting.GlobalShadows = false
-            pcall(function() RunService:Set3dRenderingEnabled(false) end)
-        else
-            settings().Rendering.QualityLevel = "Automatic"
-            game.Lighting.GlobalShadows = true
-            pcall(function() RunService:Set3dRenderingEnabled(true) end)
-        end
+        Toggles.AntiMod = Value
     end,
 })
+
+Players.PlayerAdded:Connect(function(plr)
+    if Toggles.AntiMod then
+        if plr:GetRankInGroup(game.CreatorId) > 0 or string.match(plr.Name:lower(), "admin") then
+            SendEmergencyPing("🚨 MOD DETECTED 🚨", "Developer joined the lobby. Emergency hop.", tonumber(0xFF0000))
+            WriteHopState()
+            task.wait(1)
+            TeleportService:Teleport(game.PlaceId, localPlayer)
+        end
+    end
+end)
 
 ---------------------------------------------------------
 -- 3. LEVEL ANALYTICS TAB
@@ -657,23 +682,28 @@ local LiveStatsPara = AnalyticsTab:CreateParagraph({
 
 AnalyticsTab:CreateSection("Time-to-Goal Calculator")
 local GoalResultPara = AnalyticsTab:CreateParagraph({Title = "Estimated Time", Content = "Awaiting input..."})
+
+local displaySecondsToTarget = 0 
 AnalyticsTab:CreateInput({
     Name = "Target Level",
-    PlaceholderText = "e.g. 1000000",
+    PlaceholderText = "e.g. 1000000 or 1m",
     RemoveTextAfterFocusLost = false,
     Callback = function(Text) 
-        local cleanText = string.gsub(Text, ",", "")
-        CustomTargetLevel = tonumber(cleanText) or 0 
+        CustomTargetLevel = ParseNumber(Text)
+        displaySecondsToTarget = 0 
     end,
 })
 
 AnalyticsTab:CreateSection("Time Machine Calculator")
 local TimeMachinePara = AnalyticsTab:CreateParagraph({Title = "Projected Level", Content = "Awaiting input..."})
+
 AnalyticsTab:CreateInput({
     Name = "Hours to Farm",
-    PlaceholderText = "e.g. 72",
+    PlaceholderText = "e.g. 72 or 10",
     RemoveTextAfterFocusLost = false,
-    Callback = function(Text) CustomTargetHours = tonumber(Text) or 0 end,
+    Callback = function(Text) 
+        CustomTargetHours = ParseNumber(Text)
+    end,
 })
 
 AnalyticsTab:CreateSection("Past Completed Days")
@@ -681,7 +711,7 @@ AnalyticsTab:CreateSection("Past Completed Days")
 if #trackerData.Logs == 0 then
     AnalyticsTab:CreateParagraph({
         Title = "No History Yet",
-        Content = "Finish a full 24 hours of Smart Farming to generate a log."
+        Content = "Finish a full 24 hours of Auto Farming to generate a log."
     })
 else
     for i, pastLevels in ipairs(trackerData.Logs) do
@@ -695,6 +725,7 @@ end
 
 local lastTrackedLevel = 0
 local badPerformanceSeconds = 0
+local displaySecondsToMilestone = 0
 
 task.spawn(function()
     while task.wait(1) do
@@ -780,7 +811,15 @@ task.spawn(function()
         local milestoneStep = 10000
         local nextMilestone = math.ceil((currentLvl + 1) / milestoneStep) * milestoneStep
         local levelsToMilestone = nextMilestone - currentLvl
-        local secondsToMilestone = currentLvlPerSec > 0 and (levelsToMilestone / currentLvlPerSec) or 0
+        
+        -- SMOOTH COUNTDOWN LOGIC FOR MILESTONE
+        local actualSecondsToMilestone = currentLvlPerSec > 0 and (levelsToMilestone / currentLvlPerSec) or 0
+        if displaySecondsToMilestone == 0 or math.abs(displaySecondsToMilestone - actualSecondsToMilestone) > 15 then
+            displaySecondsToMilestone = actualSecondsToMilestone
+        elseif isFarming and currentLvlPerSec > 0 then
+            displaySecondsToMilestone = displaySecondsToMilestone - 1
+            if displaySecondsToMilestone < 0 then displaySecondsToMilestone = 0 end
+        end
 
         local function FormatTimeFriendly(totalSeconds)
             if totalSeconds <= 0 or totalSeconds == math.huge then return "Calculating..." end
@@ -796,7 +835,7 @@ task.spawn(function()
         LiveStatsPara:Set({
             Title = "Live Analytics Projections",
             Content = string.format(
-                "Time Farmed This Session: %02d:%02d:%02d\n" ..
+                "Time Farmed Today: %02d:%02d:%02d\n" ..
                 "Levels Gained: %s\n" ..
                 "Lifetime Levels: %s\n\n" ..
                 "Status: %s\n" ..
@@ -807,20 +846,30 @@ task.spawn(function()
                 "- 1 Month: +%s\n" ..
                 "- 3 Months: +%s\n" ..
                 "- 6 Months: +%s\n\n" ..
-                "Next Flex Milestone Level %s:\n%s",
+                "Next Level Milestone: %s\n%s",
                 hrs, mins, secs, FormatNum(currentGain), FormatNum(trackerData.LifetimeLevelsGained),
                 currentRating, FormatNum(PeakLevelsPerHour),
                 FormatNum(projected24h), FormatNum(projected1Week), FormatNum(projected1Month),
                 FormatNum(projected3Months), FormatNum(projected6Months),
-                FormatNum(nextMilestone), FormatTimeFriendly(secondsToMilestone)
+                FormatNum(nextMilestone), FormatTimeFriendly(displaySecondsToMilestone)
             )
         })
 
+        -- SMOOTH COUNTDOWN LOGIC FOR CUSTOM TARGET
         if isFarming and CustomTargetLevel > currentLvl then
-            local levelsNeeded = CustomTargetLevel - currentLvl
-            local secondsNeeded = currentLvlPerSec > 0 and (levelsNeeded / currentLvlPerSec) or 0
-            GoalResultPara:Set({Title = "Time to Level " .. FormatNum(CustomTargetLevel), Content = FormatTimeFriendly(secondsNeeded)})
+            local targetLevelsNeeded = CustomTargetLevel - currentLvl
+            local actualTargetTime = currentLvlPerSec > 0 and (targetLevelsNeeded / currentLvlPerSec) or 0
+            
+            if displaySecondsToTarget == 0 or math.abs(displaySecondsToTarget - actualTargetTime) > 15 then
+                displaySecondsToTarget = actualTargetTime
+            else
+                displaySecondsToTarget = displaySecondsToTarget - 1
+                if displaySecondsToTarget < 0 then displaySecondsToTarget = 0 end
+            end
+            
+            GoalResultPara:Set({Title = "Time to Level " .. FormatNum(CustomTargetLevel), Content = FormatTimeFriendly(displaySecondsToTarget)})
         elseif CustomTargetLevel > 0 then
+            displaySecondsToTarget = 0
             GoalResultPara:Set({Title = "Estimated Time", Content = "Start farming to calculate ETA."})
         end
 
@@ -1374,7 +1423,34 @@ local altClickTP = false
 MiscTab:CreateButton({
    Name = "Hide or Show Black Tracker UI",
    Callback = function()
-       trackerGui.Enabled = not trackerGui.Enabled
+       if trackerGui then trackerGui.Enabled = not trackerGui.Enabled end
+   end,
+})
+
+MiscTab:CreateButton({
+   Name = "Destroy Script & UI",
+   Callback = function()
+       isFarming = false
+       Toggles = {}
+       
+       if farmingThread then task.cancel(farmingThread); farmingThread = nil end
+       if espThread then task.cancel(espThread); espThread = nil end
+       if auraThread then task.cancel(auraThread); auraThread = nil end
+       if hitboxThread then task.cancel(hitboxThread); hitboxThread = nil end
+       if bossConnection then bossConnection:Disconnect(); bossConnection = nil end
+       
+       ClearEsp()
+       RestoreHitboxes()
+       
+       if trackerGui then trackerGui:Destroy() end
+       Rayfield:Destroy()
+   end,
+})
+
+MiscTab:CreateButton({
+   Name = "Infinite Yield",
+   Callback = function()
+       loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-Infinite-yield-73483"))()
    end,
 })
 
@@ -1395,6 +1471,14 @@ MiscTab:CreateButton({
            local randomServer = AllIDs[math.random(1, #AllIDs)]
            TeleportService:TeleportToPlaceInstance(PlaceID, randomServer, localPlayer)
        end
+   end,
+})
+
+MiscTab:CreateButton({
+   Name = "Rejoin Same Server",
+   Callback = function()
+       Rayfield:Notify({Title = "Rejoining", Content = "Routing back to current public lobby...", Duration = 3})
+       TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, localPlayer)
    end,
 })
 
@@ -1420,13 +1504,6 @@ if isPC then
     end)
 end
 
-MiscTab:CreateButton({
-   Name = "Infinite Yield",
-   Callback = function()
-       loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-Infinite-yield-73483"))()
-   end,
-})
-
 Rayfield:Notify({
     Title = "AshWish Ultimate Injected",
     Content = "All failsafes active and running.",
@@ -1439,28 +1516,16 @@ Rayfield:Notify({
 ---------------------------------------------------------
 if shouldResumeFarm then
     task.spawn(function()
-        -- 1. Wait for the game to officially declare itself loaded
         if not game:IsLoaded() then game.Loaded:Wait() end
-        
-        -- 2. Wait for character and root part
         local char = localPlayer.Character or localPlayer.CharacterAdded:Wait()
         char:WaitForChild("HumanoidRootPart", 15)
-        
-        -- 3. CRITICAL: Wait for Leaderstats and Dummies to exist before calculating target
         local leaderstats = localPlayer:WaitForChild("leaderstats", 15)
         if leaderstats then leaderstats:WaitForChild("Level", 15) end
         workspace:WaitForChild("dummies", 15)
-
-        task.wait(2) -- Final buffer to let server stabilize
-
-        pcall(function()
-            if TeleportToggleObj then TeleportToggleObj:Set(true) end
-        end)
+        task.wait(2) 
         
+        pcall(function() if FarmToggleObj then FarmToggleObj:Set(true) end end)
         task.wait(0.5)
-        
-        pcall(function()
-            if FarmToggleObj then FarmToggleObj:Set(true) end
-        end)
+        pcall(function() if TeleportToggleObj then TeleportToggleObj:Set(true) end end)
     end)
 end
