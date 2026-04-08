@@ -43,15 +43,23 @@ local DiscordID = "<@1453603930209648670>"
 local KillSwitchURL = "https://raw.githubusercontent.com/AshWish-ASU/AshWish-Project/main/status.txt"
 
 ---------------------------------------------------------
--- GITHUB REMOTE KILL-SWITCH
+-- GITHUB REMOTE KILL-SWITCH (CACHE BUSTED & FORMAT FIXED)
 ---------------------------------------------------------
 task.spawn(function()
-    while task.wait(60) do
+    while task.wait(30) do -- Reduced to 30 seconds for faster response
         pcall(function()
-            local status = game:HttpGet(KillSwitchURL)
-            if status and string.match(status:upper(), "STOP") then
-                isFarming = false
-                localPlayer:Kick("Cloud Kill-Switch Activated: Session terminated remotely from GitHub.")
+            -- Generate a completely random GUID to guarantee Roblox fetches a fresh file
+            local noCacheUrl = KillSwitchURL .. "?nocache=" .. HttpService:GenerateGUID(false)
+            local status = game:HttpGet(noCacheUrl)
+            
+            if status then
+                -- This removes ALL invisible spaces and newlines that GitHub adds to files
+                local cleanStatus = string.gsub(status, "%s+", "")
+                
+                if string.find(cleanStatus:upper(), "STOP") then
+                    isFarming = false
+                    localPlayer:Kick("Cloud Kill-Switch Activated: Session terminated remotely from GitHub.")
+                end
             end
         end)
     end
@@ -524,10 +532,10 @@ TeleportToggleObj = AutoFarmTab:CreateToggle({
 
 AutoFarmTab:CreateSection("Anti-Cheat Options")
 
--- OPTIMIZED ANTI-AFK
+-- OPTIMIZED ANTI-AFK: NOW TOGGLED OFF BY DEFAULT
 AutoFarmTab:CreateToggle({
     Name = "Anti-AFK",
-    CurrentValue = true,
+    CurrentValue = false, -- SET TO FALSE HERE
     Flag = "AntiCheatFix",
     Callback = function(Value)
         Toggles.VirtualTap = Value
@@ -571,9 +579,10 @@ ProtectionTab:CreateButton({
 
 ProtectionTab:CreateSection("Network Failsafes")
 
+-- AUTO-RECONNECT: NOW TOGGLED OFF BY DEFAULT
 ProtectionTab:CreateToggle({
     Name = "Instant Auto-Reconnect Mobile",
-    CurrentValue = true,
+    CurrentValue = false, -- SET TO FALSE HERE
     Flag = "AutoReconnectToggle",
     Callback = function(Value)
         Toggles.AutoReconnect = Value
@@ -585,10 +594,17 @@ task.spawn(function()
     local function forceRejoin()
         if reconnecting then return end
         reconnecting = true
-        SendEmergencyPing("⚠️ DISCONNECT - REJOINING ⚠️", "Error detected. Re-routing to a new server.", tonumber(0xFFA500))
+        SendEmergencyPing("⚠️ DISCONNECT - REJOINING ⚠️", "Error detected. Aggressively re-routing to a new server.", tonumber(0xFFA500))
         WriteHopState()
-        task.wait(1)
-        pcall(function() TeleportService:Teleport(game.PlaceId, localPlayer) end)
+        
+        -- AGGRESSIVE RECONNECT LOOP
+        task.spawn(function()
+            while task.wait(1) do
+                pcall(function() 
+                    TeleportService:Teleport(game.PlaceId, localPlayer) 
+                end)
+            end
+        end)
     end
 
     -- Method 1: GuiService
