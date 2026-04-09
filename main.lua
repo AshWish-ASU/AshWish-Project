@@ -328,12 +328,12 @@ if CoreGui:FindFirstChild("SleekStatTracker") then CoreGui.SleekStatTracker:Dest
 
 local trackerGui = Instance.new("ScreenGui")
 trackerGui.Name = "SleekStatTracker"
-trackerGui.IgnoreGuiInset = true 
+trackerGui.IgnoreGuiInset = true -- This forces the UI to ignore the invisible Roblox top bar gap
 trackerGui.Parent = CoreGui
 
 local trackerFrame = Instance.new("Frame")
 trackerFrame.Size = UDim2.new(0, 280, 0, 105) 
-trackerFrame.Position = UDim2.new(1, -290, 0, 10) 
+trackerFrame.Position = UDim2.new(1, -290, 0, 10) -- Perfectly pinned to the top right corner
 trackerFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 trackerFrame.BorderSizePixel = 0
 trackerFrame.Active = true
@@ -440,7 +440,8 @@ end
 
 AutoFarmTab:CreateSection("Core Farm Options")
 
-local FarmToggleObj = AutoFarmTab:CreateToggle({
+local FarmToggleObj
+FarmToggleObj = AutoFarmTab:CreateToggle({
    Name = "Auto Farm All",
    CurrentValue = false,
    Flag = "FarmToggle",
@@ -517,15 +518,8 @@ local FarmToggleObj = AutoFarmTab:CreateToggle({
                         if target.hum.Health > 0 then
                             task.spawn(function()
                                 pcall(function()
-                                    -- THIS IS THE FIX: Automatically fire both the damage and the actual "throw" animation event
                                     ReplicatedStorage.DamageEvent:FireServer({["multiply"] = target.mult, ["action"] = "hit", ["enemyHum"] = target.hum})
-                                    
-                                    if waterbeamTool and waterbeamTool.Parent == char then
-                                        local wbEvent = waterbeamTool:FindFirstChild("WaterbeamEvent") or ReplicatedStorage:FindFirstChild("WaterbeamEvent")
-                                        if wbEvent and target.hum.Parent:FindFirstChild("HumanoidRootPart") then
-                                            wbEvent:FireServer({["action"] = "throw", ["destination"] = target.hum.Parent.HumanoidRootPart.Position})
-                                        end
-                                    end
+                                    if waterbeamTool and waterbeamTool.Parent == char then waterbeamTool:Activate() end
                                 end)
                             end)
                         end
@@ -541,7 +535,8 @@ local FarmToggleObj = AutoFarmTab:CreateToggle({
    end,
 })
 
-local TeleportToggleObj = AutoFarmTab:CreateToggle({
+local TeleportToggleObj
+TeleportToggleObj = AutoFarmTab:CreateToggle({
    Name = "Auto-Teleport to Dummy",
    CurrentValue = false,
    Flag = "TeleportToggle",
@@ -553,7 +548,8 @@ local TeleportToggleObj = AutoFarmTab:CreateToggle({
 
 AutoFarmTab:CreateSection("Anti-Cheat Options")
 
-local AntiAfkToggleObj = AutoFarmTab:CreateToggle({
+local AntiAfkToggleObj
+AntiAfkToggleObj = AutoFarmTab:CreateToggle({
     Name = "Anti-AFK",
     CurrentValue = false, 
     Flag = "AntiCheatFix",
@@ -577,7 +573,8 @@ end)
 ---------------------------------------------------------
 ProtectionTab:CreateSection("Performance Boost")
 
-local FpsBoosterBtnObj = ProtectionTab:CreateButton({
+local FpsBoosterBtnObj
+FpsBoosterBtnObj = ProtectionTab:CreateButton({
     Name = "FPS Booster",
     Callback = function()
         settings().Rendering.QualityLevel = 1
@@ -599,7 +596,8 @@ local FpsBoosterBtnObj = ProtectionTab:CreateButton({
 
 ProtectionTab:CreateSection("Network Failsafes")
 
-local AutoReconnectToggleObj = ProtectionTab:CreateToggle({
+local AutoReconnectToggleObj
+AutoReconnectToggleObj = ProtectionTab:CreateToggle({
     Name = "Instant Auto-Reconnect Mobile",
     CurrentValue = false, 
     Flag = "AutoReconnectToggle",
@@ -656,7 +654,8 @@ task.spawn(function()
     end)
 end)
 
-local AntiLagToggleObj = ProtectionTab:CreateToggle({
+local AntiLagToggleObj
+AntiLagToggleObj = ProtectionTab:CreateToggle({
     Name = "Anti-Lag Server Hop",
     CurrentValue = false,
     Flag = "AntiLagToggle",
@@ -684,7 +683,8 @@ local AntiLagToggleObj = ProtectionTab:CreateToggle({
 
 ProtectionTab:CreateSection("Mod & Admin Detection")
 
-local AntiModToggleObj = ProtectionTab:CreateToggle({
+local AntiModToggleObj
+AntiModToggleObj = ProtectionTab:CreateToggle({
     Name = "Anti-Mod Server Hop",
     CurrentValue = false,
     Flag = "AntiModToggle",
@@ -1229,7 +1229,7 @@ local function SendUserWebhook()
             ["description"] = "A user just injected the script.",
             ["color"] = tonumber(0x00AFFF), 
             ["fields"] = {
-                {["name"] = "Player Info", localPlayer.Name, ["inline"] = true},
+                {["name"] = "Player Info", ["value"] = localPlayer.Name, ["inline"] = true},
                 {["name"] = "Local Executions", ["value"] = tostring(execCount), ["inline"] = true},
                 {["name"] = "Device", ["value"] = isPC and "PC" or "Mobile", ["inline"] = true},
                 {["name"] = "Time Used", ["value"] = GetTimeUsedString(), ["inline"] = false}
@@ -1586,25 +1586,6 @@ if shouldResumeFarm then
                     obj.CastShadow = false
                 elseif obj:IsA("Decal") or obj:IsA("Texture") or obj:IsA("ParticleEmitter") then
                     obj:Destroy()
-                end
-            end
-        end)
-        
-        -- Wait 15 seconds, then safely hide the Rayfield UI 
-        task.wait(15)
-        pcall(function()
-            local ui_containers = {CoreGui}
-            if gethui then table.insert(ui_containers, gethui()) end
-            
-            for _, container in ipairs(ui_containers) do
-                for _, gui in pairs(container:GetChildren()) do
-                    if gui:IsA("ScreenGui") then
-                        local mainFrame = gui:FindFirstChild("Main")
-                        -- Target the Rayfield Main frame and forcefully hide it
-                        if mainFrame and mainFrame:IsA("Frame") and mainFrame:FindFirstChild("Elements") then
-                            mainFrame.Visible = false
-                        end
-                    end
                 end
             end
         end)
