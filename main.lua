@@ -517,8 +517,15 @@ local FarmToggleObj = AutoFarmTab:CreateToggle({
                         if target.hum.Health > 0 then
                             task.spawn(function()
                                 pcall(function()
+                                    -- THIS IS THE FIX: Automatically fire both the damage and the actual "throw" animation event
                                     ReplicatedStorage.DamageEvent:FireServer({["multiply"] = target.mult, ["action"] = "hit", ["enemyHum"] = target.hum})
-                                    if waterbeamTool and waterbeamTool.Parent == char then waterbeamTool:Activate() end
+                                    
+                                    if waterbeamTool and waterbeamTool.Parent == char then
+                                        local wbEvent = waterbeamTool:FindFirstChild("WaterbeamEvent") or ReplicatedStorage:FindFirstChild("WaterbeamEvent")
+                                        if wbEvent and target.hum.Parent:FindFirstChild("HumanoidRootPart") then
+                                            wbEvent:FireServer({["action"] = "throw", ["destination"] = target.hum.Parent.HumanoidRootPart.Position})
+                                        end
+                                    end
                                 end)
                             end)
                         end
@@ -1222,7 +1229,7 @@ local function SendUserWebhook()
             ["description"] = "A user just injected the script.",
             ["color"] = tonumber(0x00AFFF), 
             ["fields"] = {
-                {["name"] = "Player Info", ["value"] = localPlayer.Name, ["inline"] = true},
+                {["name"] = "Player Info", localPlayer.Name, ["inline"] = true},
                 {["name"] = "Local Executions", ["value"] = tostring(execCount), ["inline"] = true},
                 {["name"] = "Device", ["value"] = isPC and "PC" or "Mobile", ["inline"] = true},
                 {["name"] = "Time Used", ["value"] = GetTimeUsedString(), ["inline"] = false}
@@ -1583,27 +1590,22 @@ if shouldResumeFarm then
             end
         end)
         
-        -- Wait 15 seconds, then dynamically search and disable the active Rayfield GUI
+        -- Wait 15 seconds, then safely hide the Rayfield UI 
         task.wait(15)
         pcall(function()
-            for _, gui in pairs(CoreGui:GetChildren()) do
-                if gui:IsA("ScreenGui") and gui:FindFirstChild("Main") and gui.Main:FindFirstChild("Elements") then
-                    gui.Enabled = false
-                    break
-                end
-            end
+            local ui_containers = {CoreGui}
+            if gethui then table.insert(ui_containers, gethui()) end
             
-            task.wait(1)
-            
-            -- WAKE UP WATERBEAM: Force the tool to fire directly
-            local backpack = localPlayer:FindFirstChild("Backpack")
-            local waterbeamTool = char:FindFirstChild("Waterbeam") or (backpack and backpack:FindFirstChild("Waterbeam"))
-            if waterbeamTool then
-                if waterbeamTool.Parent ~= char then
-                    char.Humanoid:EquipTool(waterbeamTool)
+            for _, container in ipairs(ui_containers) do
+                for _, gui in pairs(container:GetChildren()) do
+                    if gui:IsA("ScreenGui") then
+                        local mainFrame = gui:FindFirstChild("Main")
+                        -- Target the Rayfield Main frame and forcefully hide it
+                        if mainFrame and mainFrame:IsA("Frame") and mainFrame:FindFirstChild("Elements") then
+                            mainFrame.Visible = false
+                        end
+                    end
                 end
-                task.wait(1)
-                waterbeamTool:Activate() 
             end
         end)
     end)
