@@ -328,12 +328,12 @@ if CoreGui:FindFirstChild("SleekStatTracker") then CoreGui.SleekStatTracker:Dest
 
 local trackerGui = Instance.new("ScreenGui")
 trackerGui.Name = "SleekStatTracker"
-trackerGui.IgnoreGuiInset = true -- This forces the UI to ignore the invisible Roblox top bar gap
+trackerGui.IgnoreGuiInset = true 
 trackerGui.Parent = CoreGui
 
 local trackerFrame = Instance.new("Frame")
 trackerFrame.Size = UDim2.new(0, 280, 0, 105) 
-trackerFrame.Position = UDim2.new(1, -290, 0, 10) -- Perfectly pinned to the top right corner
+trackerFrame.Position = UDim2.new(1, -290, 0, 10) 
 trackerFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 trackerFrame.BorderSizePixel = 0
 trackerFrame.Active = true
@@ -440,8 +440,7 @@ end
 
 AutoFarmTab:CreateSection("Core Farm Options")
 
-local FarmToggleObj
-FarmToggleObj = AutoFarmTab:CreateToggle({
+local FarmToggleObj = AutoFarmTab:CreateToggle({
    Name = "Auto Farm All",
    CurrentValue = false,
    Flag = "FarmToggle",
@@ -535,8 +534,7 @@ FarmToggleObj = AutoFarmTab:CreateToggle({
    end,
 })
 
-local TeleportToggleObj
-TeleportToggleObj = AutoFarmTab:CreateToggle({
+local TeleportToggleObj = AutoFarmTab:CreateToggle({
    Name = "Auto-Teleport to Dummy",
    CurrentValue = false,
    Flag = "TeleportToggle",
@@ -548,8 +546,7 @@ TeleportToggleObj = AutoFarmTab:CreateToggle({
 
 AutoFarmTab:CreateSection("Anti-Cheat Options")
 
-local AntiAfkToggleObj
-AntiAfkToggleObj = AutoFarmTab:CreateToggle({
+local AntiAfkToggleObj = AutoFarmTab:CreateToggle({
     Name = "Anti-AFK",
     CurrentValue = false, 
     Flag = "AntiCheatFix",
@@ -573,8 +570,7 @@ end)
 ---------------------------------------------------------
 ProtectionTab:CreateSection("Performance Boost")
 
-local FpsBoosterBtnObj
-FpsBoosterBtnObj = ProtectionTab:CreateButton({
+local FpsBoosterBtnObj = ProtectionTab:CreateButton({
     Name = "FPS Booster",
     Callback = function()
         settings().Rendering.QualityLevel = 1
@@ -596,8 +592,7 @@ FpsBoosterBtnObj = ProtectionTab:CreateButton({
 
 ProtectionTab:CreateSection("Network Failsafes")
 
-local AutoReconnectToggleObj
-AutoReconnectToggleObj = ProtectionTab:CreateToggle({
+local AutoReconnectToggleObj = ProtectionTab:CreateToggle({
     Name = "Instant Auto-Reconnect Mobile",
     CurrentValue = false, 
     Flag = "AutoReconnectToggle",
@@ -654,8 +649,7 @@ task.spawn(function()
     end)
 end)
 
-local AntiLagToggleObj
-AntiLagToggleObj = ProtectionTab:CreateToggle({
+local AntiLagToggleObj = ProtectionTab:CreateToggle({
     Name = "Anti-Lag Server Hop",
     CurrentValue = false,
     Flag = "AntiLagToggle",
@@ -683,8 +677,7 @@ AntiLagToggleObj = ProtectionTab:CreateToggle({
 
 ProtectionTab:CreateSection("Mod & Admin Detection")
 
-local AntiModToggleObj
-AntiModToggleObj = ProtectionTab:CreateToggle({
+local AntiModToggleObj = ProtectionTab:CreateToggle({
     Name = "Anti-Mod Server Hop",
     CurrentValue = false,
     Flag = "AntiModToggle",
@@ -1587,6 +1580,30 @@ if shouldResumeFarm then
                 elseif obj:IsA("Decal") or obj:IsA("Texture") or obj:IsA("ParticleEmitter") then
                     obj:Destroy()
                 end
+            end
+        end)
+        
+        -- Wait 15 seconds, then dynamically search and disable the active Rayfield GUI
+        task.wait(15)
+        pcall(function()
+            for _, gui in pairs(CoreGui:GetChildren()) do
+                if gui:IsA("ScreenGui") and gui:FindFirstChild("Main") and gui.Main:FindFirstChild("Elements") then
+                    gui.Enabled = false
+                    break
+                end
+            end
+            
+            task.wait(1)
+            
+            -- WAKE UP WATERBEAM: Force the tool to fire directly
+            local backpack = localPlayer:FindFirstChild("Backpack")
+            local waterbeamTool = char:FindFirstChild("Waterbeam") or (backpack and backpack:FindFirstChild("Waterbeam"))
+            if waterbeamTool then
+                if waterbeamTool.Parent ~= char then
+                    char.Humanoid:EquipTool(waterbeamTool)
+                end
+                task.wait(1)
+                waterbeamTool:Activate() 
             end
         end)
     end)
