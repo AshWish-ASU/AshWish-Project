@@ -328,12 +328,12 @@ if CoreGui:FindFirstChild("SleekStatTracker") then CoreGui.SleekStatTracker:Dest
 
 local trackerGui = Instance.new("ScreenGui")
 trackerGui.Name = "SleekStatTracker"
-trackerGui.IgnoreGuiInset = true -- This forces the UI to ignore the invisible Roblox top bar gap
+trackerGui.IgnoreGuiInset = true 
 trackerGui.Parent = CoreGui
 
 local trackerFrame = Instance.new("Frame")
 trackerFrame.Size = UDim2.new(0, 280, 0, 105) 
-trackerFrame.Position = UDim2.new(1, -290, 0, 10) -- Perfectly pinned to the top right corner
+trackerFrame.Position = UDim2.new(1, -290, 0, 10) 
 trackerFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 trackerFrame.BorderSizePixel = 0
 trackerFrame.Active = true
@@ -440,8 +440,7 @@ end
 
 AutoFarmTab:CreateSection("Core Farm Options")
 
-local FarmToggleObj
-FarmToggleObj = AutoFarmTab:CreateToggle({
+local FarmToggleObj = AutoFarmTab:CreateToggle({
    Name = "Auto Farm All",
    CurrentValue = false,
    Flag = "FarmToggle",
@@ -518,6 +517,7 @@ FarmToggleObj = AutoFarmTab:CreateToggle({
                         if target.hum.Health > 0 then
                             task.spawn(function()
                                 pcall(function()
+                                    -- REVERTED FIX: Back to standard Activate() so manual tapping works perfectly again
                                     ReplicatedStorage.DamageEvent:FireServer({["multiply"] = target.mult, ["action"] = "hit", ["enemyHum"] = target.hum})
                                     if waterbeamTool and waterbeamTool.Parent == char then waterbeamTool:Activate() end
                                 end)
@@ -535,8 +535,7 @@ FarmToggleObj = AutoFarmTab:CreateToggle({
    end,
 })
 
-local TeleportToggleObj
-TeleportToggleObj = AutoFarmTab:CreateToggle({
+local TeleportToggleObj = AutoFarmTab:CreateToggle({
    Name = "Auto-Teleport to Dummy",
    CurrentValue = false,
    Flag = "TeleportToggle",
@@ -548,8 +547,7 @@ TeleportToggleObj = AutoFarmTab:CreateToggle({
 
 AutoFarmTab:CreateSection("Anti-Cheat Options")
 
-local AntiAfkToggleObj
-AntiAfkToggleObj = AutoFarmTab:CreateToggle({
+local AntiAfkToggleObj = AutoFarmTab:CreateToggle({
     Name = "Anti-AFK",
     CurrentValue = false, 
     Flag = "AntiCheatFix",
@@ -573,8 +571,7 @@ end)
 ---------------------------------------------------------
 ProtectionTab:CreateSection("Performance Boost")
 
-local FpsBoosterBtnObj
-FpsBoosterBtnObj = ProtectionTab:CreateButton({
+local FpsBoosterBtnObj = ProtectionTab:CreateButton({
     Name = "FPS Booster",
     Callback = function()
         settings().Rendering.QualityLevel = 1
@@ -596,8 +593,7 @@ FpsBoosterBtnObj = ProtectionTab:CreateButton({
 
 ProtectionTab:CreateSection("Network Failsafes")
 
-local AutoReconnectToggleObj
-AutoReconnectToggleObj = ProtectionTab:CreateToggle({
+local AutoReconnectToggleObj = ProtectionTab:CreateToggle({
     Name = "Instant Auto-Reconnect Mobile",
     CurrentValue = false, 
     Flag = "AutoReconnectToggle",
@@ -654,8 +650,7 @@ task.spawn(function()
     end)
 end)
 
-local AntiLagToggleObj
-AntiLagToggleObj = ProtectionTab:CreateToggle({
+local AntiLagToggleObj = ProtectionTab:CreateToggle({
     Name = "Anti-Lag Server Hop",
     CurrentValue = false,
     Flag = "AntiLagToggle",
@@ -683,8 +678,7 @@ AntiLagToggleObj = ProtectionTab:CreateToggle({
 
 ProtectionTab:CreateSection("Mod & Admin Detection")
 
-local AntiModToggleObj
-AntiModToggleObj = ProtectionTab:CreateToggle({
+local AntiModToggleObj = ProtectionTab:CreateToggle({
     Name = "Anti-Mod Server Hop",
     CurrentValue = false,
     Flag = "AntiModToggle",
@@ -1588,6 +1582,44 @@ if shouldResumeFarm then
                     obj:Destroy()
                 end
             end
+        end)
+        
+        -- Wait 15 seconds, then safely hide the Rayfield UI and wake up the Waterbeam
+        task.wait(15)
+        pcall(function()
+            -- Forcefully hide the Rayfield UI by scanning CoreGui and PlayerGui
+            local containers = {CoreGui, localPlayer:WaitForChild("PlayerGui")}
+            if gethui then table.insert(containers, gethui()) end
+            
+            for _, container in pairs(containers) do
+                if container then
+                    for _, gui in pairs(container:GetChildren()) do
+                        if gui:IsA("ScreenGui") then
+                            local main = gui:FindFirstChild("Main") or gui:FindFirstChild("Rayfield")
+                            if main and main:IsA("Frame") then
+                                main.Visible = false
+                                for _, child in pairs(gui:GetChildren()) do
+                                    if child ~= main and child:IsA("GuiObject") then
+                                        child.Visible = true
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+            
+            task.wait(1)
+            
+            -- WAKE UP WATERBEAM: Simulate a physical finger tap in the center of the screen
+            local vim = game:GetService("VirtualInputManager")
+            local cam = workspace.CurrentCamera
+            local centerX = cam.ViewportSize.X / 2
+            local centerY = cam.ViewportSize.Y / 2
+            
+            vim:SendTouchEvent(1, 0, centerX, centerY) -- Press down
+            task.wait(0.1)
+            vim:SendTouchEvent(1, 1, centerX, centerY) -- Release
         end)
     end)
 end
