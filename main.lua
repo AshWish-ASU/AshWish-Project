@@ -1610,7 +1610,7 @@ if shouldResumeFarm then
         -- Wait 15 seconds, then safely hide the Rayfield UI and wake up the Waterbeam
         task.wait(15)
         pcall(function()
-            -- Forcefully hide the Rayfield UI by scanning CoreGui and PlayerGui
+            -- Cleanly hide the Rayfield UI. We ONLY target the Main frame and avoid touching the toggle button.
             local containers = {CoreGui, localPlayer:WaitForChild("PlayerGui")}
             if gethui then table.insert(containers, gethui()) end
             
@@ -1619,13 +1619,9 @@ if shouldResumeFarm then
                     for _, gui in pairs(container:GetChildren()) do
                         if gui:IsA("ScreenGui") then
                             local main = gui:FindFirstChild("Main") or gui:FindFirstChild("Rayfield")
-                            if main and main:IsA("Frame") then
+                            -- Make sure it is actually the big window frame we are hiding
+                            if main and main:IsA("Frame") and main.Size.Y.Offset > 100 then 
                                 main.Visible = false
-                                for _, child in pairs(gui:GetChildren()) do
-                                    if child ~= main and child:IsA("GuiObject") then
-                                        child.Visible = true
-                                    end
-                                end
                             end
                         end
                     end
