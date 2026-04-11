@@ -1,5 +1,5 @@
--- Load the ultra-sleek Rayfield UI Library (Bypassing redirect to fix the false "Outdated" warning)
-local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/sirius-menu/rayfield/main/source.lua'))()
+-- Load the ultra-sleek Rayfield UI Library (Stable link, Prompt Killer handles the fake warning)
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 -- Services
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
