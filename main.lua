@@ -14,6 +14,7 @@ local GuiService = game:GetService("GuiService")
 local LogService = game:GetService("LogService")
 local Stats = game:GetService("Stats")
 local CoreGui = game:GetService("CoreGui")
+local Lighting = game:GetService("Lighting")
 local localPlayer = Players.LocalPlayer
 local mouse = localPlayer:GetMouse()
 
@@ -62,7 +63,50 @@ local DiscordID = "<@1453603930209648670>"
 local KillSwitchURL = "https://raw.githubusercontent.com/AshWish-ASU/AshWish-Project/main/status.txt"
 
 ---------------------------------------------------------
--- GITHUB REMOTE KILL-SWITCH (ULTIMATE CACHE BYPASS)
+-- ADVANCED FPS BOOSTER ENGINE
+---------------------------------------------------------
+local function AdvancedFPSBoost()
+    pcall(function()
+        settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+        settings().Network.IncomingReplicationLag = 0
+        
+        Lighting.GlobalShadows = false
+        Lighting.FogEnd = 9e9
+        Lighting.ShadowSoftness = 0
+        
+        if sethiddenproperty then
+            pcall(function() sethiddenproperty(Lighting, "Technology", Enum.Technology.Compatibility) end)
+        end
+
+        local Terrain = workspace:FindFirstChildOfClass("Terrain")
+        if Terrain then
+            Terrain.WaterWaveSize = 0
+            Terrain.WaterWaveSpeed = 0
+            Terrain.WaterReflectance = 0
+            Terrain.WaterTransparency = 0
+            Terrain.Decoration = false
+        end
+
+        for _, v in pairs(Lighting:GetDescendants()) do
+            if v:IsA("BlurEffect") or v:IsA("SunRaysEffect") or v:IsA("ColorCorrectionEffect") or v:IsA("BloomEffect") or v:IsA("DepthOfFieldEffect") then
+                v.Enabled = false
+            end
+        end
+
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if obj:IsA("BasePart") then
+                obj.Material = Enum.Material.SmoothPlastic
+                obj.Reflectance = 0
+                obj.CastShadow = false
+            elseif obj:IsA("Decal") or obj:IsA("Texture") or obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Fire") or obj:IsA("Smoke") or obj:IsA("Sparkles") then
+                obj:Destroy()
+            end
+        end
+    end)
+end
+
+---------------------------------------------------------
+-- GITHUB REMOTE KILL-SWITCH
 ---------------------------------------------------------
 task.spawn(function()
     while task.wait(30) do 
@@ -153,7 +197,7 @@ local sharedVisualColor = Color3.fromRGB(255, 50, 50)
 local rainbowVisuals = false
 
 RunService.RenderStepped:Connect(function()
-    if rainbowVisuals then sharedVisualColor = Color3.fromHSV(tick() % 4 / 4, 1, 1) end
+    if rainbowVisuals then sharedVisualColor = Color3.fromHSV(os.clock() % 4 / 4, 1, 1) end
 end)
 
 local function FormatNum(value)
@@ -200,6 +244,28 @@ if hookmetamethod then
         return oldNamecall(self, arg1, ...)
     end)
 end
+
+---------------------------------------------------------
+-- DEDICATED TOOL ENFORCER (Fixes Waterbeam Glitch)
+---------------------------------------------------------
+task.spawn(function()
+    while task.wait(0.05) do
+        if Toggles.GodFarm or Toggles.NormalKillAura or Toggles.AttachKillAura then
+            pcall(function()
+                local char = localPlayer.Character
+                if char then
+                    local tool = char:FindFirstChild("Waterbeam") or localPlayer:FindFirstChild("Backpack"):FindFirstChild("Waterbeam")
+                    if tool then
+                        if tool.Parent ~= char then
+                            char:FindFirstChild("Humanoid"):EquipTool(tool)
+                        end
+                        tool:Activate()
+                    end
+                end
+            end)
+        end
+    end
+end)
 
 ---------------------------------------------------------
 -- GLOBAL TIME & EXECUTION TRACKER
@@ -487,15 +553,6 @@ FarmToggleObj = AutoFarmTab:CreateToggle({
                 while Toggles.GodFarm do
                     local char = localPlayer.Character
                     local playerLevel = getLevel()
-                    local waterbeamTool = nil
-
-                    if char then
-                        local backpack = localPlayer:FindFirstChild("Backpack")
-                        waterbeamTool = char:FindFirstChild("Waterbeam") or (backpack and backpack:FindFirstChild("Waterbeam"))
-                        if waterbeamTool and waterbeamTool.Parent ~= char then
-                            char.Humanoid:EquipTool(waterbeamTool)
-                        end
-                    end
 
                     local bestDummyData = nil
                     for i = #dummyData, 1, -1 do
@@ -536,13 +593,12 @@ FarmToggleObj = AutoFarmTab:CreateToggle({
                             task.spawn(function()
                                 pcall(function()
                                     ReplicatedStorage.DamageEvent:FireServer({["multiply"] = target.mult, ["action"] = "hit", ["enemyHum"] = target.hum})
-                                    if waterbeamTool and waterbeamTool.Parent == char then waterbeamTool:Activate() end
                                 end)
                             end)
                         end
                     end
                     
-                    task.wait(math.random(8, 12) / 100) 
+                    task.wait(math.random(5, 10) / 100) 
                 end
             end)
         else
@@ -579,7 +635,6 @@ localPlayer.Idled:Connect(function()
     if Toggles.VirtualTap then
         VirtualUser:CaptureController()
         VirtualUser:ClickButton2(Vector2.new())
-        -- Secondary failsafe
         VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.RightShift, false, game)
         VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.RightShift, false, game)
     end
@@ -592,22 +647,10 @@ ProtectionTab:CreateSection("Performance Boost")
 
 local FpsBoosterBtnObj
 FpsBoosterBtnObj = ProtectionTab:CreateButton({
-    Name = "FPS Booster",
+    Name = "MAX FPS Booster",
     Callback = function()
-        settings().Rendering.QualityLevel = 1
-        settings().Network.IncomingReplicationLag = 0
-        game.Lighting.GlobalShadows = false
-        game.Lighting.FogEnd = 9e9
-        
-        for _, obj in pairs(workspace:GetDescendants()) do
-            if obj:IsA("BasePart") then
-                obj.Material = Enum.Material.SmoothPlastic
-                obj.CastShadow = false
-            elseif obj:IsA("Decal") or obj:IsA("Texture") or obj:IsA("ParticleEmitter") then
-                obj:Destroy()
-            end
-        end
-        Rayfield:Notify({Title = "FPS Boosted", Content = "Textures & particles cleared safely.", Duration = 3})
+        AdvancedFPSBoost()
+        Rayfield:Notify({Title = "MAX FPS Boosted", Content = "All heavy rendering systems disabled.", Duration = 3})
     end,
 })
 
@@ -631,9 +674,8 @@ task.spawn(function()
         SendEmergencyPing("⚠️ DISCONNECT - REJOINING ⚠️", "Error detected. Aggressively re-routing to a new server.", tonumber(0xFFA500))
         WriteHopState()
         
-        -- AGGRESSIVE RECONNECT LOOP
         task.spawn(function()
-            while task.wait(1) do
+            while task.wait(5) do
                 pcall(function() 
                     TeleportService:Teleport(game.PlaceId, localPlayer) 
                 end)
@@ -641,7 +683,6 @@ task.spawn(function()
         end)
     end
 
-    -- Method 1: GuiService
     pcall(function()
         GuiService.ErrorMessageChanged:Connect(function()
             if Toggles.AutoReconnect then
@@ -651,14 +692,12 @@ task.spawn(function()
         end)
     end)
     
-    -- Method 2: CoreGui ErrorPrompt
     pcall(function()
         CoreGui.RobloxPromptGui.promptOverlay.ChildAdded:Connect(function(child)
             if Toggles.AutoReconnect and child.Name == "ErrorPrompt" then forceRejoin() end
         end)
     end)
 
-    -- Method 3: LogService Catch-all
     pcall(function()
         LogService.MessageOut:Connect(function(Message, Type)
             if Toggles.AutoReconnect and Type == Enum.MessageType.MessageError then
@@ -1054,15 +1093,6 @@ local function ManageKillAura()
                         KillAuraTargetHrp = targetPlr.Character.HumanoidRootPart
                         local char = localPlayer.Character
                         local myHrp = char and char:FindFirstChild("HumanoidRootPart")
-                        local waterbeamTool = nil
-
-                        if char then
-                            local backpack = localPlayer:FindFirstChild("Backpack")
-                            waterbeamTool = char:FindFirstChild("Waterbeam") or (backpack and backpack:FindFirstChild("Waterbeam"))
-                            if waterbeamTool and waterbeamTool.Parent ~= char then
-                                char.Humanoid:EquipTool(waterbeamTool)
-                            end
-                        end
 
                         if Toggles.AttachKillAura and myHrp then
                             myHrp.CFrame = KillAuraTargetHrp.CFrame * cfNew(0, 15, 0)
@@ -1075,9 +1105,6 @@ local function ManageKillAura()
                                 ["action"] = "hit", 
                                 ["enemyHum"] = targetPlr.Character.Humanoid
                             })
-                            if waterbeamTool and waterbeamTool.Parent == char then
-                                waterbeamTool:Activate()
-                            end
                         end)
                     else
                         KillAuraTargetHrp = nil
@@ -1591,21 +1618,8 @@ if shouldResumeFarm then
         task.wait(0.2)
         pcall(function() if AntiModToggleObj then AntiModToggleObj:Set(true) end end)
         
-        -- Automatically trigger the FPS Booster sequence manually
-        pcall(function()
-            settings().Rendering.QualityLevel = 1
-            settings().Network.IncomingReplicationLag = 0
-            game.Lighting.GlobalShadows = false
-            game.Lighting.FogEnd = 9e9
-            for _, obj in pairs(workspace:GetDescendants()) do
-                if obj:IsA("BasePart") then
-                    obj.Material = Enum.Material.SmoothPlastic
-                    obj.CastShadow = false
-                elseif obj:IsA("Decal") or obj:IsA("Texture") or obj:IsA("ParticleEmitter") then
-                    obj:Destroy()
-                end
-            end
-        end)
+        -- Advanced Engine Optimizer Trigger
+        AdvancedFPSBoost()
         
         -- Wait 15 seconds, then safely hide the Rayfield UI and wake up the Waterbeam
         task.wait(15)
@@ -1619,7 +1633,6 @@ if shouldResumeFarm then
                     for _, gui in pairs(container:GetChildren()) do
                         if gui:IsA("ScreenGui") then
                             local main = gui:FindFirstChild("Main") or gui:FindFirstChild("Rayfield")
-                            -- Make sure it is actually the big window frame we are hiding
                             if main and main:IsA("Frame") and main.Size.Y.Offset > 100 then 
                                 main.Visible = false
                             end
@@ -1630,15 +1643,14 @@ if shouldResumeFarm then
             
             task.wait(1)
             
-            -- WAKE UP WATERBEAM: Simulate a physical finger tap in the center of the screen
             local vim = game:GetService("VirtualInputManager")
             local cam = workspace.CurrentCamera
             local centerX = cam.ViewportSize.X / 2
             local centerY = cam.ViewportSize.Y / 2
             
-            vim:SendTouchEvent(1, 0, centerX, centerY) -- Press down
+            vim:SendTouchEvent(1, 0, centerX, centerY) 
             task.wait(0.1)
-            vim:SendTouchEvent(1, 1, centerX, centerY) -- Release
+            vim:SendTouchEvent(1, 1, centerX, centerY)
         end)
     end)
 end
