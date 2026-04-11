@@ -1,5 +1,5 @@
--- Load the ultra-sleek Rayfield UI Library
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+-- Load the ultra-sleek Rayfield UI Library (Bypassing redirect to fix the false "Outdated" warning)
+local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/sirius-menu/rayfield/main/source.lua'))()
 
 -- Services
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -20,6 +20,25 @@ local mouse = localPlayer:GetMouse()
 -- Device Detection
 local isPC = UserInputService.KeyboardEnabled
 local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+
+---------------------------------------------------------
+-- RAYFIELD PROMPT KILLER (Destroys fake warning popups)
+---------------------------------------------------------
+task.spawn(function()
+    task.wait(4)
+    pcall(function()
+        local containers = {CoreGui}
+        if gethui then table.insert(containers, gethui()) end
+        for _, container in pairs(containers) do
+            for _, obj in pairs(container:GetDescendants()) do
+                if obj:IsA("TextLabel") and string.find(string.lower(obj.Text), "outdated") then
+                    local promptFrame = obj:FindFirstAncestorWhichIsA("Frame")
+                    if promptFrame then promptFrame:Destroy() end
+                end
+            end
+        end
+    end)
+end)
 
 ---------------------------------------------------------
 -- CORE VARIABLES & STATE SAVER
@@ -51,7 +70,6 @@ task.spawn(function()
             local noCacheUrl = KillSwitchURL .. "?nocache=" .. HttpService:GenerateGUID(false)
             local statusText = ""
             
-            -- Force strict no-cache headers if the executor supports advanced HTTP requests
             local httprequest = (syn and syn.request) or (http and http.request) or http_request or request
             if httprequest then
                 local res = httprequest({
@@ -69,7 +87,6 @@ task.spawn(function()
             end
             
             if statusText and statusText ~= "" then
-                -- This removes ALL invisible spaces and newlines that GitHub adds to files
                 local cleanStatus = string.gsub(statusText, "%s+", "")
                 if string.find(cleanStatus:upper(), "STOP") then
                     isFarming = false
@@ -440,7 +457,8 @@ end
 
 AutoFarmTab:CreateSection("Core Farm Options")
 
-local FarmToggleObj = AutoFarmTab:CreateToggle({
+local FarmToggleObj
+FarmToggleObj = AutoFarmTab:CreateToggle({
    Name = "Auto Farm All",
    CurrentValue = false,
    Flag = "FarmToggle",
@@ -517,7 +535,6 @@ local FarmToggleObj = AutoFarmTab:CreateToggle({
                         if target.hum.Health > 0 then
                             task.spawn(function()
                                 pcall(function()
-                                    -- REVERTED FIX: Back to standard Activate() so manual tapping works perfectly again
                                     ReplicatedStorage.DamageEvent:FireServer({["multiply"] = target.mult, ["action"] = "hit", ["enemyHum"] = target.hum})
                                     if waterbeamTool and waterbeamTool.Parent == char then waterbeamTool:Activate() end
                                 end)
@@ -535,7 +552,8 @@ local FarmToggleObj = AutoFarmTab:CreateToggle({
    end,
 })
 
-local TeleportToggleObj = AutoFarmTab:CreateToggle({
+local TeleportToggleObj
+TeleportToggleObj = AutoFarmTab:CreateToggle({
    Name = "Auto-Teleport to Dummy",
    CurrentValue = false,
    Flag = "TeleportToggle",
@@ -547,7 +565,8 @@ local TeleportToggleObj = AutoFarmTab:CreateToggle({
 
 AutoFarmTab:CreateSection("Anti-Cheat Options")
 
-local AntiAfkToggleObj = AutoFarmTab:CreateToggle({
+local AntiAfkToggleObj
+AntiAfkToggleObj = AutoFarmTab:CreateToggle({
     Name = "Anti-AFK",
     CurrentValue = false, 
     Flag = "AntiCheatFix",
@@ -571,7 +590,8 @@ end)
 ---------------------------------------------------------
 ProtectionTab:CreateSection("Performance Boost")
 
-local FpsBoosterBtnObj = ProtectionTab:CreateButton({
+local FpsBoosterBtnObj
+FpsBoosterBtnObj = ProtectionTab:CreateButton({
     Name = "FPS Booster",
     Callback = function()
         settings().Rendering.QualityLevel = 1
@@ -593,7 +613,8 @@ local FpsBoosterBtnObj = ProtectionTab:CreateButton({
 
 ProtectionTab:CreateSection("Network Failsafes")
 
-local AutoReconnectToggleObj = ProtectionTab:CreateToggle({
+local AutoReconnectToggleObj
+AutoReconnectToggleObj = ProtectionTab:CreateToggle({
     Name = "Instant Auto-Reconnect Mobile",
     CurrentValue = false, 
     Flag = "AutoReconnectToggle",
@@ -650,7 +671,8 @@ task.spawn(function()
     end)
 end)
 
-local AntiLagToggleObj = ProtectionTab:CreateToggle({
+local AntiLagToggleObj
+AntiLagToggleObj = ProtectionTab:CreateToggle({
     Name = "Anti-Lag Server Hop",
     CurrentValue = false,
     Flag = "AntiLagToggle",
@@ -678,7 +700,8 @@ local AntiLagToggleObj = ProtectionTab:CreateToggle({
 
 ProtectionTab:CreateSection("Mod & Admin Detection")
 
-local AntiModToggleObj = ProtectionTab:CreateToggle({
+local AntiModToggleObj
+AntiModToggleObj = ProtectionTab:CreateToggle({
     Name = "Anti-Mod Server Hop",
     CurrentValue = false,
     Flag = "AntiModToggle",
