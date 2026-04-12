@@ -1495,9 +1495,9 @@ local currentFakeRank = "None"
 local fakeRankGui = nil
 
 local rankImages = {
-    ["Rank 1-10 Badge"] = "rbxassetid://13321938624",
+    ["Rank 1-10 Badge"] = "rbxassetid://13321938232",
     ["Rank 11-30 Badge"] = "rbxassetid://13321938398",
-    ["Rank 31-70 Badge"] = "rbxassetid://13321938232",
+    ["Rank 31-70 Badge"] = "rbxassetid://13321938624",
     ["Rank 71-100 Badge"] = "rbxassetid://13321938751"
 }
 
@@ -1518,8 +1518,9 @@ local function applyFakeRank()
         fakeRankGui = Instance.new("BillboardGui")
         fakeRankGui.Name = "FakeRankBadge"
         fakeRankGui.Adornee = head
-        fakeRankGui.Size = UDim2.new(0, 85, 0, 85)
-        fakeRankGui.StudsOffset = Vector3.new(0, 2.5, 0)
+        -- Using Scale instead of Offset to keep the size physically accurate to the world distance
+        fakeRankGui.Size = UDim2.new(4, 0, 4, 0)
+        fakeRankGui.StudsOffset = Vector3.new(0, 3, 0)
         fakeRankGui.AlwaysOnTop = true
 
         local img = Instance.new("ImageLabel")
