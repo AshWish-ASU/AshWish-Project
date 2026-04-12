@@ -675,8 +675,8 @@ local function applyFakeRank()
             fakeRankGui.Name = "FakeRankBadge"
             fakeRankGui.Adornee = head
             -- Finely calibrated "Goldilocks" size and offset
-            fakeRankGui.Size = UDim2.new(3, 0, 3, 0)
-            fakeRankGui.StudsOffset = Vector3.new(0, 5, 0)
+            fakeRankGui.Size = UDim2.new(2.8, 0, 2.8, 0)
+            fakeRankGui.StudsOffset = Vector3.new(0, 4.2, 0)
             fakeRankGui.AlwaysOnTop = true
             fakeRankGui.MaxDistance = 250
 
