@@ -479,6 +479,7 @@ local Window = Rayfield:CreateWindow({
    KeySystem = false
 })
 
+-- MOVED TROLL TAB TO THE VERY FRONT SO IT DOESNT GET CUT OFF ON MOBILE SCREENS
 local AutoFarmTab = Window:CreateTab("Auto Farming", 4483362458)
 local TrollTab    = Window:CreateTab("Troll", 4483362458)
 local ProtectionTab = Window:CreateTab("Protection", 4483362458)
@@ -673,9 +674,9 @@ local function applyFakeRank()
             fakeRankGui = Instance.new("BillboardGui")
             fakeRankGui.Name = "FakeRankBadge"
             fakeRankGui.Adornee = head
-            -- Adjusted size and offset for perfect scaling and height
-            fakeRankGui.Size = UDim2.new(2.2, 0, 2.2, 0)
-            fakeRankGui.StudsOffset = Vector3.new(0, 11.5, 0)
+            -- Fixed "Goldilocks" size and offset for perfect scaling and height
+            fakeRankGui.Size = UDim2.new(4, 0, 4, 0)
+            fakeRankGui.StudsOffset = Vector3.new(0, 8.5, 0)
             fakeRankGui.AlwaysOnTop = true
             fakeRankGui.MaxDistance = 250
 
