@@ -899,7 +899,7 @@ task.spawn(function()
 
         if trackerData.FarmingSeconds >= 86400 then
             local fields = {
-                {["name"] = "Player", localPlayer.Name, ["inline"] = false},
+                {["name"] = "Player", ["value"] = localPlayer.Name, ["inline"] = false},
                 {["name"] = "Official Rating", ["value"] = currentRating, ["inline"] = false},
                 {["name"] = "24H Gain", ["value"] = "+" .. FormatNum(trackerData.LevelsGained), ["inline"] = true},
                 {["name"] = "Peak Speed", ["value"] = FormatNum(PeakLevelsPerHour) .. " Lvl/Hr", ["inline"] = true},
@@ -1560,7 +1560,7 @@ local function applyFakeRank()
         img.Size = UDim2.new(1, 0, 1, 0)
         img.BackgroundTransparency = 1
         img.Image = rankImages[currentFakeRank] or ""
-        img.ImageFit = Enum.ImageFit.Fit
+        img.ScaleType = Enum.ScaleType.Fit -- FIXED FROM ImageFit!
 
         fakeRankGui.Parent = head
     end)
