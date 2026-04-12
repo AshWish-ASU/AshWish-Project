@@ -605,39 +605,6 @@ FarmToggleObj = AutoFarmTab:CreateToggle({
    end,
 })
 
-AutoFarmTab:CreateToggle({
-    Name = "Ghost-Hit Event Hearts",
-    CurrentValue = false,
-    Flag = "HeartFarmToggle",
-    Callback = function(Value)
-        Toggles.HeartFarm = Value
-        if Value then
-            task.spawn(function()
-                while Toggles.HeartFarm do
-                    pcall(function()
-                        local heartsContainer = workspace:FindFirstChild("HeartsContainer")
-                        if heartsContainer then
-                            for _, heart in ipairs(heartsContainer:GetChildren()) do
-                                local hum = heart:FindFirstChild("Humanoid")
-                                if hum and hum.Health > 0 then
-                                    for i = 1, 3 do
-                                        ReplicatedStorage.DamageEvent:FireServer({
-                                            ["multiply"] = 1, 
-                                            ["action"] = "hit", 
-                                            ["enemyHum"] = hum
-                                        })
-                                    end
-                                end
-                            end
-                        end
-                    end)
-                    task.wait(0.5) 
-                end
-            end)
-        end
-    end,
-})
-
 local TeleportToggleObj
 TeleportToggleObj = AutoFarmTab:CreateToggle({
    Name = "Auto-Teleport to Dummy",
@@ -1528,10 +1495,10 @@ local currentFakeRank = "None"
 local fakeRankGui = nil
 
 local rankImages = {
-    ["Rank #1"] = "rbxassetid://13321938232",
-    ["Rank #2"] = "rbxassetid://13321938398",
-    ["Rank #3"] = "rbxassetid://13321938624",
-    ["Rank #4-10"] = "rbxassetid://13321938751"
+    ["Rank 1-10 Badge"] = "rbxassetid://13321938624",
+    ["Rank 11-30 Badge"] = "rbxassetid://13321938398",
+    ["Rank 31-70 Badge"] = "rbxassetid://13321938232",
+    ["Rank 71-100 Badge"] = "rbxassetid://13321938751"
 }
 
 local function applyFakeRank()
@@ -1551,8 +1518,8 @@ local function applyFakeRank()
         fakeRankGui = Instance.new("BillboardGui")
         fakeRankGui.Name = "FakeRankBadge"
         fakeRankGui.Adornee = head
-        fakeRankGui.Size = UDim2.new(0, 150, 0, 150)
-        fakeRankGui.StudsOffset = Vector3.new(0, 3.5, 0)
+        fakeRankGui.Size = UDim2.new(0, 85, 0, 85)
+        fakeRankGui.StudsOffset = Vector3.new(0, 2.5, 0)
         fakeRankGui.AlwaysOnTop = true
 
         local img = Instance.new("ImageLabel")
@@ -1560,7 +1527,7 @@ local function applyFakeRank()
         img.Size = UDim2.new(1, 0, 1, 0)
         img.BackgroundTransparency = 1
         img.Image = rankImages[currentFakeRank] or ""
-        img.ScaleType = Enum.ScaleType.Fit -- FIXED FROM ImageFit!
+        img.ScaleType = Enum.ScaleType.Fit 
 
         fakeRankGui.Parent = head
     end)
@@ -1575,7 +1542,7 @@ end)
 
 PlayerTab:CreateDropdown({
     Name = "Fake Leaderboard Badge",
-    Options = {"None", "Rank #1", "Rank #2", "Rank #3", "Rank #4-10"},
+    Options = {"None", "Rank 1-10 Badge", "Rank 11-30 Badge", "Rank 31-70 Badge", "Rank 71-100 Badge"},
     CurrentOption = {"None"},
     MultipleOptions = false,
     Flag = "FakeRankBadgeDropdown",
