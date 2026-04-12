@@ -479,7 +479,6 @@ local Window = Rayfield:CreateWindow({
    KeySystem = false
 })
 
--- MOVED TROLL TAB TO THE VERY FRONT SO IT DOESNT GET CUT OFF ON MOBILE SCREENS
 local AutoFarmTab = Window:CreateTab("Auto Farming", 4483362458)
 local TrollTab    = Window:CreateTab("Troll", 4483362458)
 local ProtectionTab = Window:CreateTab("Protection", 4483362458)
@@ -640,9 +639,9 @@ localPlayer.Idled:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 2. TROLL TAB & LOCAL COSMETICS
+-- 2. TROLL TAB & VISUAL EXPLOITS
 ---------------------------------------------------------
-TrollTab:CreateSection("Local Cosmetics (Client-Side)")
+TrollTab:CreateSection("Visual Exploits")
 
 local currentFakeRank = "None"
 local fakeRankGui = nil
@@ -655,40 +654,44 @@ local rankImages = {
 }
 
 local function applyFakeRank()
-    pcall(function()
-        if currentFakeRank == "None" then
+    task.spawn(function()
+        pcall(function()
+            if currentFakeRank == "None" then
+                if fakeRankGui then fakeRankGui:Destroy() end
+                return
+            end
+
+            local char = localPlayer.Character
+            if not char then return end
+            
+            -- Keep checking until Head is fully loaded
+            local head = char:WaitForChild("Head", 5)
+            if not head then return end
+
             if fakeRankGui then fakeRankGui:Destroy() end
-            return
-        end
 
-        local char = localPlayer.Character
-        if not char then return end
-        local head = char:FindFirstChild("Head") or char:FindFirstChild("HumanoidRootPart")
-        if not head then return end
+            fakeRankGui = Instance.new("BillboardGui")
+            fakeRankGui.Name = "FakeRankBadge"
+            fakeRankGui.Adornee = head
+            -- Adjusted size and offset for perfect scaling and height
+            fakeRankGui.Size = UDim2.new(2.2, 0, 2.2, 0)
+            fakeRankGui.StudsOffset = Vector3.new(0, 11.5, 0)
+            fakeRankGui.AlwaysOnTop = true
+            fakeRankGui.MaxDistance = 250
 
-        if fakeRankGui then fakeRankGui:Destroy() end
+            local img = Instance.new("ImageLabel")
+            img.Parent = fakeRankGui
+            img.Size = UDim2.new(1, 0, 1, 0)
+            img.BackgroundTransparency = 1
+            img.Image = rankImages[currentFakeRank] or ""
+            img.ScaleType = Enum.ScaleType.Fit 
 
-        fakeRankGui = Instance.new("BillboardGui")
-        fakeRankGui.Name = "FakeRankBadge"
-        fakeRankGui.Adornee = head
-        -- Aggressively shrunk size and raised height for perfection
-        fakeRankGui.Size = UDim2.new(2.2, 0, 2.2, 0)
-        fakeRankGui.StudsOffset = Vector3.new(0, 11.5, 0)
-        fakeRankGui.AlwaysOnTop = true
-        fakeRankGui.MaxDistance = 250
-
-        local img = Instance.new("ImageLabel")
-        img.Parent = fakeRankGui
-        img.Size = UDim2.new(1, 0, 1, 0)
-        img.BackgroundTransparency = 1
-        img.Image = rankImages[currentFakeRank] or ""
-        img.ScaleType = Enum.ScaleType.Fit 
-
-        fakeRankGui.Parent = head
+            fakeRankGui.Parent = head
+        end)
     end)
 end
 
-localPlayer.CharacterAdded:Connect(function()
+localPlayer.CharacterAdded:Connect(function(char)
     task.spawn(function()
         task.wait(2)
         applyFakeRank()
