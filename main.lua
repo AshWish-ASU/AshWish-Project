@@ -1385,7 +1385,7 @@ task.spawn(function()
 end)
 
 ---------------------------------------------------------
--- 7. PLAYER SETTINGS TAB & LOCAL COSMETICS
+-- 7. PLAYER SETTINGS TAB
 ---------------------------------------------------------
 PlayerTab:CreateSection("Clipping")
 
@@ -1489,111 +1489,6 @@ task.spawn(function()
     end
 end)
 
-PlayerTab:CreateSection("Local Cosmetics (Client-Side)")
-
-local currentFakeRank = "None"
-local fakeRankGui = nil
-
-local function applyFakeRank()
-    pcall(function()
-        if currentFakeRank == "None" then
-            if fakeRankGui then fakeRankGui:Destroy() end
-            return
-        end
-
-        local char = localPlayer.Character
-        if not char then return end
-        local head = char:FindFirstChild("Head") or char:FindFirstChild("HumanoidRootPart")
-        if not head then return end
-
-        if fakeRankGui then fakeRankGui:Destroy() end
-
-        fakeRankGui = Instance.new("BillboardGui")
-        fakeRankGui.Name = "FakeRankBadge"
-        fakeRankGui.Adornee = head
-        fakeRankGui.Size = UDim2.new(0, 160, 0, 45)
-        fakeRankGui.StudsOffset = Vector3.new(0, 3.5, 0)
-        fakeRankGui.AlwaysOnTop = true
-
-        local bgFrame = Instance.new("Frame")
-        bgFrame.Size = UDim2.new(1, 0, 1, 0)
-        bgFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-        bgFrame.Parent = fakeRankGui
-
-        local corner = Instance.new("UICorner")
-        corner.CornerRadius = UDim.new(0, 8)
-        corner.Parent = bgFrame
-
-        local stroke = Instance.new("UIStroke")
-        stroke.Thickness = 2.5
-        stroke.Parent = bgFrame
-
-        local gradient = Instance.new("UIGradient")
-        gradient.Parent = bgFrame
-
-        local txt = Instance.new("TextLabel")
-        txt.Parent = bgFrame
-        txt.Size = UDim2.new(1, 0, 1, 0)
-        txt.BackgroundTransparency = 1
-        txt.Font = Enum.Font.GothamBlack
-        txt.TextSize = 20
-        txt.TextStrokeTransparency = 0.5
-        txt.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-        txt.TextColor3 = Color3.fromRGB(255, 255, 255)
-        
-        if currentFakeRank == "Rank 1-10 Badge" then
-            txt.Text = "Rank #1"
-            stroke.Color = Color3.fromRGB(255, 215, 0) 
-            gradient.Color = ColorSequence.new{
-                ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 223, 0)),
-                ColorSequenceKeypoint.new(1, Color3.fromRGB(218, 165, 32))
-            }
-        elseif currentFakeRank == "Rank 11-30 Badge" then
-            txt.Text = "Rank #11"
-            stroke.Color = Color3.fromRGB(0, 255, 255) 
-            gradient.Color = ColorSequence.new{
-                ColorSequenceKeypoint.new(0, Color3.fromRGB(224, 255, 255)),
-                ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 206, 209))
-            }
-        elseif currentFakeRank == "Rank 31-70 Badge" then
-            txt.Text = "Rank #31"
-            stroke.Color = Color3.fromRGB(0, 250, 154) 
-            gradient.Color = ColorSequence.new{
-                ColorSequenceKeypoint.new(0, Color3.fromRGB(152, 251, 152)),
-                ColorSequenceKeypoint.new(1, Color3.fromRGB(46, 139, 87))
-            }
-        elseif currentFakeRank == "Rank 71-100 Badge" then
-            txt.Text = "Rank #71"
-            stroke.Color = Color3.fromRGB(138, 43, 226) 
-            gradient.Color = ColorSequence.new{
-                ColorSequenceKeypoint.new(0, Color3.fromRGB(216, 191, 216)),
-                ColorSequenceKeypoint.new(1, Color3.fromRGB(148, 0, 211))
-            }
-        end
-
-        fakeRankGui.Parent = head
-    end)
-end
-
-localPlayer.CharacterAdded:Connect(function()
-    task.spawn(function()
-        task.wait(2)
-        applyFakeRank()
-    end)
-end)
-
-PlayerTab:CreateDropdown({
-    Name = "Fake Leaderboard Badge",
-    Options = {"None", "Rank 1-10 Badge", "Rank 11-30 Badge", "Rank 31-70 Badge", "Rank 71-100 Badge"},
-    CurrentOption = {"None"},
-    MultipleOptions = false,
-    Flag = "FakeRankBadgeDropdown",
-    Callback = function(Option)
-        currentFakeRank = Option[1]
-        applyFakeRank()
-    end,
-})
-
 ---------------------------------------------------------
 -- 8. MISC TAB
 ---------------------------------------------------------
@@ -1620,7 +1515,6 @@ MiscTab:CreateButton({
        
        ClearEsp()
        RestoreHitboxes()
-       if fakeRankGui then pcall(function() fakeRankGui:Destroy() end) end
        
        if trackerGui then trackerGui:Destroy() end
        Rayfield:Destroy()
