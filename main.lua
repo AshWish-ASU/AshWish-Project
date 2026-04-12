@@ -674,9 +674,9 @@ local function applyFakeRank()
             fakeRankGui = Instance.new("BillboardGui")
             fakeRankGui.Name = "FakeRankBadge"
             fakeRankGui.Adornee = head
-            -- Fixed "Goldilocks" size and offset for perfect scaling and height
-            fakeRankGui.Size = UDim2.new(4, 0, 4, 0)
-            fakeRankGui.StudsOffset = Vector3.new(0, 8.5, 0)
+            -- Finely calibrated "Goldilocks" size and offset
+            fakeRankGui.Size = UDim2.new(3, 0, 3, 0)
+            fakeRankGui.StudsOffset = Vector3.new(0, 5, 0)
             fakeRankGui.AlwaysOnTop = true
             fakeRankGui.MaxDistance = 250
 
