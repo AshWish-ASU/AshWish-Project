@@ -63,20 +63,16 @@ local DiscordID = "<@1453603930209648670>"
 local KillSwitchURL = "https://raw.githubusercontent.com/AshWish-ASU/AshWish-Project/main/status.txt"
 
 ---------------------------------------------------------
--- ADVANCED FPS BOOSTER ENGINE
+-- ADVANCED FPS BOOSTER ENGINE (MOBILE SAFE)
 ---------------------------------------------------------
 local function AdvancedFPSBoost()
     pcall(function()
-        settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+        settings().Rendering.QualityLevel = 1
         settings().Network.IncomingReplicationLag = 0
         
         Lighting.GlobalShadows = false
         Lighting.FogEnd = 9e9
         Lighting.ShadowSoftness = 0
-        
-        if sethiddenproperty then
-            pcall(function() sethiddenproperty(Lighting, "Technology", Enum.Technology.Compatibility) end)
-        end
 
         local Terrain = workspace:FindFirstChildOfClass("Terrain")
         if Terrain then
