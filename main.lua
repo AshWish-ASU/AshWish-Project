@@ -605,6 +605,39 @@ FarmToggleObj = AutoFarmTab:CreateToggle({
    end,
 })
 
+AutoFarmTab:CreateToggle({
+    Name = "Ghost-Hit Event Hearts",
+    CurrentValue = false,
+    Flag = "HeartFarmToggle",
+    Callback = function(Value)
+        Toggles.HeartFarm = Value
+        if Value then
+            task.spawn(function()
+                while Toggles.HeartFarm do
+                    pcall(function()
+                        local heartsContainer = workspace:FindFirstChild("HeartsContainer")
+                        if heartsContainer then
+                            for _, heart in ipairs(heartsContainer:GetChildren()) do
+                                local hum = heart:FindFirstChild("Humanoid")
+                                if hum and hum.Health > 0 then
+                                    for i = 1, 3 do
+                                        ReplicatedStorage.DamageEvent:FireServer({
+                                            ["multiply"] = 1, 
+                                            ["action"] = "hit", 
+                                            ["enemyHum"] = hum
+                                        })
+                                    end
+                                end
+                            end
+                        end
+                    end)
+                    task.wait(0.5) 
+                end
+            end)
+        end
+    end,
+})
+
 local TeleportToggleObj
 TeleportToggleObj = AutoFarmTab:CreateToggle({
    Name = "Auto-Teleport to Dummy",
@@ -866,7 +899,7 @@ task.spawn(function()
 
         if trackerData.FarmingSeconds >= 86400 then
             local fields = {
-                {["name"] = "Player", ["value"] = localPlayer.Name, ["inline"] = false},
+                {["name"] = "Player", localPlayer.Name, ["inline"] = false},
                 {["name"] = "Official Rating", ["value"] = currentRating, ["inline"] = false},
                 {["name"] = "24H Gain", ["value"] = "+" .. FormatNum(trackerData.LevelsGained), ["inline"] = true},
                 {["name"] = "Peak Speed", ["value"] = FormatNum(PeakLevelsPerHour) .. " Lvl/Hr", ["inline"] = true},
@@ -1385,7 +1418,7 @@ task.spawn(function()
 end)
 
 ---------------------------------------------------------
--- 7. PLAYER SETTINGS TAB
+-- 7. PLAYER SETTINGS TAB & LOCAL COSMETICS
 ---------------------------------------------------------
 PlayerTab:CreateSection("Clipping")
 
@@ -1489,6 +1522,69 @@ task.spawn(function()
     end
 end)
 
+PlayerTab:CreateSection("Local Cosmetics (Client-Side)")
+
+local currentFakeRank = "None"
+local fakeRankGui = nil
+
+local rankImages = {
+    ["Rank #1"] = "rbxassetid://13321938232",
+    ["Rank #2"] = "rbxassetid://13321938398",
+    ["Rank #3"] = "rbxassetid://13321938624",
+    ["Rank #4-10"] = "rbxassetid://13321938751"
+}
+
+local function applyFakeRank()
+    pcall(function()
+        if currentFakeRank == "None" then
+            if fakeRankGui then fakeRankGui:Destroy() end
+            return
+        end
+
+        local char = localPlayer.Character
+        if not char then return end
+        local head = char:FindFirstChild("Head") or char:FindFirstChild("HumanoidRootPart")
+        if not head then return end
+
+        if fakeRankGui then fakeRankGui:Destroy() end
+
+        fakeRankGui = Instance.new("BillboardGui")
+        fakeRankGui.Name = "FakeRankBadge"
+        fakeRankGui.Adornee = head
+        fakeRankGui.Size = UDim2.new(0, 150, 0, 150)
+        fakeRankGui.StudsOffset = Vector3.new(0, 3.5, 0)
+        fakeRankGui.AlwaysOnTop = true
+
+        local img = Instance.new("ImageLabel")
+        img.Parent = fakeRankGui
+        img.Size = UDim2.new(1, 0, 1, 0)
+        img.BackgroundTransparency = 1
+        img.Image = rankImages[currentFakeRank] or ""
+        img.ImageFit = Enum.ImageFit.Fit
+
+        fakeRankGui.Parent = head
+    end)
+end
+
+localPlayer.CharacterAdded:Connect(function()
+    task.spawn(function()
+        task.wait(2)
+        applyFakeRank()
+    end)
+end)
+
+PlayerTab:CreateDropdown({
+    Name = "Fake Leaderboard Badge",
+    Options = {"None", "Rank #1", "Rank #2", "Rank #3", "Rank #4-10"},
+    CurrentOption = {"None"},
+    MultipleOptions = false,
+    Flag = "FakeRankBadgeDropdown",
+    Callback = function(Option)
+        currentFakeRank = Option[1]
+        applyFakeRank()
+    end,
+})
+
 ---------------------------------------------------------
 -- 8. MISC TAB
 ---------------------------------------------------------
@@ -1515,6 +1611,7 @@ MiscTab:CreateButton({
        
        ClearEsp()
        RestoreHitboxes()
+       if fakeRankGui then pcall(function() fakeRankGui:Destroy() end) end
        
        if trackerGui then trackerGui:Destroy() end
        Rayfield:Destroy()
