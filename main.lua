@@ -1518,10 +1518,10 @@ local function applyFakeRank()
         fakeRankGui = Instance.new("BillboardGui")
         fakeRankGui.Name = "FakeRankBadge"
         fakeRankGui.Adornee = head
-        -- Using Scale instead of Offset to keep the size physically accurate to the world distance
-        fakeRankGui.Size = UDim2.new(4, 0, 4, 0)
-        fakeRankGui.StudsOffset = Vector3.new(0, 3, 0)
+        fakeRankGui.Size = UDim2.new(6, 0, 6, 0)
+        fakeRankGui.StudsOffset = Vector3.new(0, 6.5, 0)
         fakeRankGui.AlwaysOnTop = true
+        fakeRankGui.MaxDistance = 250
 
         local img = Instance.new("ImageLabel")
         img.Parent = fakeRankGui
