@@ -1492,7 +1492,15 @@ end)
 PlayerTab:CreateSection("Local Cosmetics (Client-Side)")
 
 local currentFakeRank = "None"
+local customRankId = ""
 local fakeRankGui = nil
+
+local rankImages = {
+    ["Rank 1-10 Badge"] = "rbxassetid://7040445622", -- Ruby/Champion style
+    ["Rank 11-30 Badge"] = "rbxassetid://7040445214", -- Diamond/Platinum style
+    ["Rank 31-70 Badge"] = "rbxassetid://7040445330", -- Gold style
+    ["Rank 71-100 Badge"] = "rbxassetid://7040445479" -- Bronze style
+}
 
 local function applyFakeRank()
     pcall(function()
@@ -1511,31 +1519,19 @@ local function applyFakeRank()
         fakeRankGui = Instance.new("BillboardGui")
         fakeRankGui.Name = "FakeRankBadge"
         fakeRankGui.Adornee = head
-        fakeRankGui.Size = UDim2.new(0, 200, 0, 50)
+        fakeRankGui.Size = UDim2.new(0, 100, 0, 100)
         fakeRankGui.StudsOffset = Vector3.new(0, 3.5, 0)
         fakeRankGui.AlwaysOnTop = true
 
-        local txt = Instance.new("TextLabel")
-        txt.Parent = fakeRankGui
-        txt.Size = UDim2.new(1, 0, 1, 0)
-        txt.BackgroundTransparency = 1
-        txt.Font = Enum.Font.SourceSansBold
-        txt.TextSize = 24
-        txt.TextStrokeTransparency = 0
-        txt.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+        local img = Instance.new("ImageLabel")
+        img.Parent = fakeRankGui
+        img.Size = UDim2.new(1, 0, 1, 0)
+        img.BackgroundTransparency = 1
         
-        if currentFakeRank == "Rank #1" then
-            txt.Text = "[ Rank #1 ]"
-            txt.TextColor3 = Color3.fromRGB(255, 215, 0) 
-        elseif currentFakeRank == "Rank #2" then
-            txt.Text = "[ Rank #2 ]"
-            txt.TextColor3 = Color3.fromRGB(192, 192, 192) 
-        elseif currentFakeRank == "Rank #3" then
-            txt.Text = "[ Rank #3 ]"
-            txt.TextColor3 = Color3.fromRGB(205, 127, 50) 
+        if customRankId ~= "" then
+            img.Image = customRankId
         else
-            txt.Text = "[ " .. currentFakeRank .. " ]"
-            txt.TextColor3 = Color3.fromRGB(170, 0, 255) 
+            img.Image = rankImages[currentFakeRank] or ""
         end
 
         fakeRankGui.Parent = head
@@ -1551,12 +1547,22 @@ end)
 
 PlayerTab:CreateDropdown({
     Name = "Fake Leaderboard Badge",
-    Options = {"None", "Rank #1", "Rank #2", "Rank #3", "Rank #4", "Rank #5", "Rank #6", "Rank #7", "Rank #8", "Rank #9", "Rank #10"},
+    Options = {"None", "Rank 1-10 Badge", "Rank 11-30 Badge", "Rank 31-70 Badge", "Rank 71-100 Badge"},
     CurrentOption = {"None"},
     MultipleOptions = false,
     Flag = "FakeRankBadgeDropdown",
     Callback = function(Option)
         currentFakeRank = Option[1]
+        applyFakeRank()
+    end,
+})
+
+PlayerTab:CreateInput({
+    Name = "Custom Badge Asset ID (Optional)",
+    PlaceholderText = "rbxassetid://...",
+    RemoveTextAfterFocusLost = false,
+    Callback = function(Text)
+        customRankId = Text
         applyFakeRank()
     end,
 })
