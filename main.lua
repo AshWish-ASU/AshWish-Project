@@ -254,7 +254,8 @@ task.spawn(function()
             pcall(function()
                 local char = localPlayer.Character
                 if char then
-                    local tool = char:FindFirstChild("Waterbeam") or localPlayer:FindFirstChild("Backpack"):FindFirstChild("Waterbeam")
+                    local backpack = localPlayer:FindFirstChild("Backpack")
+                    local tool = char:FindFirstChild("Waterbeam") or (backpack and backpack:FindFirstChild("Waterbeam"))
                     if tool then
                         if tool.Parent ~= char then
                             char:FindFirstChild("Humanoid"):EquipTool(tool)
@@ -647,10 +648,10 @@ ProtectionTab:CreateSection("Performance Boost")
 
 local FpsBoosterBtnObj
 FpsBoosterBtnObj = ProtectionTab:CreateButton({
-    Name = "MAX FPS Booster",
+    Name = "FPS Booster",
     Callback = function()
         AdvancedFPSBoost()
-        Rayfield:Notify({Title = "MAX FPS Boosted", Content = "All heavy rendering systems disabled.", Duration = 3})
+        Rayfield:Notify({Title = "FPS Boosted", Content = "All heavy rendering systems disabled.", Duration = 3})
     end,
 })
 
@@ -1388,7 +1389,7 @@ task.spawn(function()
 end)
 
 ---------------------------------------------------------
--- 7. PLAYER SETTINGS TAB
+-- 7. PLAYER SETTINGS TAB & LOCAL COSMETICS
 ---------------------------------------------------------
 PlayerTab:CreateSection("Clipping")
 
@@ -1462,8 +1463,6 @@ jpSlider.Callback = function(Value)
     enforceMovement = true
 end
 
-PlayerTab:CreateSection("Reset Player Settings")
-
 PlayerTab:CreateButton({
     Name = "Reset Speed and Jump Power",
     Callback = function()
@@ -1494,6 +1493,78 @@ task.spawn(function()
     end
 end)
 
+PlayerTab:CreateSection("Local Cosmetics (Client-Side)")
+
+local currentFakeRank = "None"
+local fakeRankGui = nil
+
+local function applyFakeRank()
+    pcall(function()
+        if currentFakeRank == "None" then
+            if fakeRankGui then fakeRankGui:Destroy() end
+            return
+        end
+
+        local char = localPlayer.Character
+        if not char then return end
+        local head = char:FindFirstChild("Head") or char:FindFirstChild("HumanoidRootPart")
+        if not head then return end
+
+        if fakeRankGui then fakeRankGui:Destroy() end
+
+        fakeRankGui = Instance.new("BillboardGui")
+        fakeRankGui.Name = "FakeRankBadge"
+        fakeRankGui.Adornee = head
+        fakeRankGui.Size = UDim2.new(0, 200, 0, 50)
+        fakeRankGui.StudsOffset = Vector3.new(0, 3.5, 0)
+        fakeRankGui.AlwaysOnTop = true
+
+        local txt = Instance.new("TextLabel")
+        txt.Parent = fakeRankGui
+        txt.Size = UDim2.new(1, 0, 1, 0)
+        txt.BackgroundTransparency = 1
+        txt.Font = Enum.Font.SourceSansBold
+        txt.TextSize = 24
+        txt.TextStrokeTransparency = 0
+        txt.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+        
+        if currentFakeRank == "Rank #1" then
+            txt.Text = "[ Rank #1 ]"
+            txt.TextColor3 = Color3.fromRGB(255, 215, 0) 
+        elseif currentFakeRank == "Rank #2" then
+            txt.Text = "[ Rank #2 ]"
+            txt.TextColor3 = Color3.fromRGB(192, 192, 192) 
+        elseif currentFakeRank == "Rank #3" then
+            txt.Text = "[ Rank #3 ]"
+            txt.TextColor3 = Color3.fromRGB(205, 127, 50) 
+        else
+            txt.Text = "[ " .. currentFakeRank .. " ]"
+            txt.TextColor3 = Color3.fromRGB(170, 0, 255) 
+        end
+
+        fakeRankGui.Parent = head
+    end)
+end
+
+localPlayer.CharacterAdded:Connect(function()
+    task.spawn(function()
+        task.wait(2)
+        applyFakeRank()
+    end)
+end)
+
+PlayerTab:CreateDropdown({
+    Name = "Fake Leaderboard Badge",
+    Options = {"None", "Rank #1", "Rank #2", "Rank #3", "Rank #4", "Rank #5", "Rank #6", "Rank #7", "Rank #8", "Rank #9", "Rank #10"},
+    CurrentOption = {"None"},
+    MultipleOptions = false,
+    Flag = "FakeRankBadgeDropdown",
+    Callback = function(Option)
+        currentFakeRank = Option[1]
+        applyFakeRank()
+    end,
+})
+
 ---------------------------------------------------------
 -- 8. MISC TAB
 ---------------------------------------------------------
@@ -1520,6 +1591,7 @@ MiscTab:CreateButton({
        
        ClearEsp()
        RestoreHitboxes()
+       if fakeRankGui then pcall(function() fakeRankGui:Destroy() end) end
        
        if trackerGui then trackerGui:Destroy() end
        Rayfield:Destroy()
