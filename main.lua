@@ -486,6 +486,7 @@ local CombatTab   = Window:CreateTab("Combat", 4483362458)
 local WebhookTab  = Window:CreateTab("Discord Webhooks", 4483362458)
 local TeleportTab = Window:CreateTab("Teleport", 4483362458)
 local PlayerTab   = Window:CreateTab("Player Settings", 4483362458)
+local TrollTab    = Window:CreateTab("Troll", 4483362458)
 local MiscTab     = Window:CreateTab("Misc", 4483362458)
 
 ---------------------------------------------------------
@@ -1385,7 +1386,7 @@ task.spawn(function()
 end)
 
 ---------------------------------------------------------
--- 7. PLAYER SETTINGS TAB & LOCAL COSMETICS
+-- 7. PLAYER SETTINGS TAB
 ---------------------------------------------------------
 PlayerTab:CreateSection("Clipping")
 
@@ -1489,7 +1490,10 @@ task.spawn(function()
     end
 end)
 
-PlayerTab:CreateSection("Local Cosmetics (Client-Side)")
+---------------------------------------------------------
+-- 8. TROLL TAB & LOCAL COSMETICS
+---------------------------------------------------------
+TrollTab:CreateSection("Local Cosmetics (Client-Side)")
 
 local currentFakeRank = "None"
 local fakeRankGui = nil
@@ -1518,8 +1522,9 @@ local function applyFakeRank()
         fakeRankGui = Instance.new("BillboardGui")
         fakeRankGui.Name = "FakeRankBadge"
         fakeRankGui.Adornee = head
-        fakeRankGui.Size = UDim2.new(6, 0, 6, 0)
-        fakeRankGui.StudsOffset = Vector3.new(0, 6.5, 0)
+        -- Adjusted size and offset for perfect scaling and height
+        fakeRankGui.Size = UDim2.new(3.5, 0, 3.5, 0)
+        fakeRankGui.StudsOffset = Vector3.new(0, 8.5, 0)
         fakeRankGui.AlwaysOnTop = true
         fakeRankGui.MaxDistance = 250
 
@@ -1541,7 +1546,7 @@ localPlayer.CharacterAdded:Connect(function()
     end)
 end)
 
-PlayerTab:CreateDropdown({
+TrollTab:CreateDropdown({
     Name = "Fake Leaderboard Badge",
     Options = {"None", "Rank 1-10 Badge", "Rank 11-30 Badge", "Rank 31-70 Badge", "Rank 71-100 Badge"},
     CurrentOption = {"None"},
@@ -1554,7 +1559,7 @@ PlayerTab:CreateDropdown({
 })
 
 ---------------------------------------------------------
--- 8. MISC TAB
+-- 9. MISC TAB
 ---------------------------------------------------------
 local altClickTP = false
 
