@@ -1,4 +1,4 @@
--- Load the ultra-sleek Rayfield UI Library (Stable link, Prompt Killer handles the fake warning)
+-- Load the ultra-sleek Rayfield UI Library
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 -- Services
@@ -23,7 +23,7 @@ local isPC = UserInputService.KeyboardEnabled
 local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
 
 ---------------------------------------------------------
--- RAYFIELD PROMPT KILLER (Destroys fake warning popups)
+-- RAYFIELD PROMPT KILLER
 ---------------------------------------------------------
 task.spawn(function()
     task.wait(4)
@@ -57,13 +57,13 @@ local mFloor = math.floor
 local v3New = Vector3.new
 local cfNew = CFrame.new
 
--- Hardcoded Webhook URL & GitHub Kill Switch
+-- Hardcoded Webhooks & Switches
 local UserWebhookURL = "https://discord.com/api/webhooks/1485790793833906329/QsnuKoZQvFtu-bm3w_hyuuwoHl7eAxU7F-4ls9wDgzwGE99tORY4zbuUUI_HZDBQThSh"
 local DiscordID = "<@1453603930209648670>"
 local KillSwitchURL = "https://raw.githubusercontent.com/AshWish-ASU/AshWish-Project/main/status.txt"
 
 ---------------------------------------------------------
--- ADVANCED FPS BOOSTER ENGINE (MOBILE SAFE)
+-- ADVANCED FPS BOOSTER ENGINE
 ---------------------------------------------------------
 local function AdvancedFPSBoost()
     pcall(function()
@@ -130,14 +130,13 @@ task.spawn(function()
                 local cleanStatus = string.gsub(statusText, "%s+", "")
                 if string.find(cleanStatus:upper(), "STOP") then
                     isFarming = false
-                    localPlayer:Kick("Cloud Kill-Switch Activated: Session terminated remotely from GitHub.")
+                    localPlayer:Kick("Cloud Kill-Switch Activated")
                 end
             end
         end)
     end
 end)
 
--- Autoexec State Saver Check
 local shouldResumeFarm = false
 pcall(function()
     if isfile and readfile and isfile("ROTEX_HopState.txt") then
@@ -166,7 +165,7 @@ local function SendEmergencyPing(title, reason, color)
                 Method = "POST",
                 Headers = {["Content-Type"] = "application/json"},
                 Body = HttpService:JSONEncode({
-                    ["content"] = DiscordID .. " **EMERGENCY ALERT**",
+                    ["content"] = DiscordID .. " Emergency Alert",
                     ["embeds"] = {{
                         ["title"] = title,
                         ["description"] = reason,
@@ -219,7 +218,7 @@ local function ParseNumber(str)
 end
 
 ---------------------------------------------------------
--- NETWORK INTERCEPTOR (Kill Aura Logic)
+-- NETWORK INTERCEPTOR
 ---------------------------------------------------------
 local KillAuraTargetHrp = nil
 local FixedTargetPos = Vector3.new(255.390686, 267.746063, 1106.12268)
@@ -242,7 +241,7 @@ if hookmetamethod then
 end
 
 ---------------------------------------------------------
--- DEDICATED TOOL ENFORCER (Fixes Waterbeam Glitch)
+-- DEDICATED TOOL ENFORCER
 ---------------------------------------------------------
 task.spawn(function()
     while task.wait(0.05) do
@@ -326,7 +325,7 @@ local function getLevel()
 end
 
 ---------------------------------------------------------
--- PERSISTENT 24-HOUR LEVEL TRACKER & FAILSAFE LOGIC
+-- PERSISTENT 24-HOUR LEVEL TRACKER
 ---------------------------------------------------------
 local webhookQueue = {}
 local processingQueue = false
@@ -395,7 +394,7 @@ end
 local function GetPerformanceRating(projectedGain, historicalAverage)
     if historicalAverage <= 0 then historicalAverage = 1000 end
     local ratio = projectedGain / historicalAverage
-    if ratio >= 1.50 then return "[GOD-TIER]" elseif ratio >= 1.10 then return "[CRUSHING IT]" elseif ratio >= 0.85 then return "[CONSISTENT]" elseif ratio >= 0.50 then return "[SLUGGISH]" else return "[BROKEN / AFK]" end
+    if ratio >= 1.50 then return "GOD TIER" elseif ratio >= 1.10 then return "CRUSHING IT" elseif ratio >= 0.85 then return "CONSISTENT" elseif ratio >= 0.50 then return "SLUGGISH" else return "BROKEN AFK" end
 end
 
 local rollingGains = {}
@@ -479,15 +478,16 @@ local Window = Rayfield:CreateWindow({
    KeySystem = false
 })
 
-local AutoFarmTab = Window:CreateTab("Auto Farming", 4483362458)
-local TrollTab    = Window:CreateTab("Troll", 4483362458)
+-- REORDERED TABS EXACTLY AS REQUESTED
+local AutoFarmTab   = Window:CreateTab("Auto Farming", 4483362458)
 local ProtectionTab = Window:CreateTab("Protection", 4483362458)
-local AnalyticsTab = Window:CreateTab("Level Analytics", 4483362458)
-local CombatTab   = Window:CreateTab("Combat", 4483362458)
-local WebhookTab  = Window:CreateTab("Discord Webhooks", 4483362458)
-local TeleportTab = Window:CreateTab("Teleport", 4483362458)
-local PlayerTab   = Window:CreateTab("Player Settings", 4483362458)
-local MiscTab     = Window:CreateTab("Misc", 4483362458)
+local CombatTab     = Window:CreateTab("Combat", 4483362458)
+local TrollTab      = Window:CreateTab("Troll", 4483362458)
+local AnalyticsTab  = Window:CreateTab("Level Analytics", 4483362458)
+local TeleportTab   = Window:CreateTab("Teleport", 4483362458)
+local PlayerTab     = Window:CreateTab("Player Settings", 4483362458)
+local WebhookTab    = Window:CreateTab("Discord Webhooks", 4483362458)
+local MiscTab       = Window:CreateTab("Misc", 4483362458)
 
 ---------------------------------------------------------
 -- 1. AUTO FARMING TAB
@@ -519,7 +519,7 @@ local function TeleportToBestDummy()
     end
 end
 
-AutoFarmTab:CreateSection("Core Farm Options")
+AutoFarmTab:CreateSection("Auto Farm")
 
 local FarmToggleObj
 FarmToggleObj = AutoFarmTab:CreateToggle({
@@ -608,7 +608,7 @@ FarmToggleObj = AutoFarmTab:CreateToggle({
 
 local TeleportToggleObj
 TeleportToggleObj = AutoFarmTab:CreateToggle({
-   Name = "Auto-Teleport to Dummy",
+   Name = "Auto Teleport To Dummy",
    CurrentValue = false,
    Flag = "TeleportToggle",
    Callback = function(Value) 
@@ -617,11 +617,14 @@ TeleportToggleObj = AutoFarmTab:CreateToggle({
    end,
 })
 
-AutoFarmTab:CreateSection("Anti-Cheat Options")
+---------------------------------------------------------
+-- 2. PROTECTION TAB
+---------------------------------------------------------
+ProtectionTab:CreateSection("Anti AFK")
 
 local AntiAfkToggleObj
-AntiAfkToggleObj = AutoFarmTab:CreateToggle({
-    Name = "Anti-AFK",
+AntiAfkToggleObj = ProtectionTab:CreateToggle({
+    Name = "Anti AFK",
     CurrentValue = false, 
     Flag = "AntiCheatFix",
     Callback = function(Value)
@@ -638,185 +641,7 @@ localPlayer.Idled:Connect(function()
     end
 end)
 
----------------------------------------------------------
--- 2. TROLL TAB
----------------------------------------------------------
-TrollTab:CreateSection("Local Cosmetics")
-
-local currentFakeRank = "None"
-local fakeRankGui = nil
-
-local rankImages = {
-    ["Rank 1-10 Badge"] = "rbxassetid://13321938624",
-    ["Rank 11-30 Badge"] = "rbxassetid://13321938398",
-    ["Rank 31-70 Badge"] = "rbxassetid://13321938232",
-    ["Rank 71-100 Badge"] = "rbxassetid://13321938751"
-}
-
-local function applyFakeRank()
-    task.spawn(function()
-        pcall(function()
-            if currentFakeRank == "None" then
-                if fakeRankGui then fakeRankGui:Destroy() end
-                return
-            end
-
-            local char = localPlayer.Character
-            if not char then return end
-            
-            -- Keep checking until Head is fully loaded
-            local head = char:WaitForChild("Head", 5)
-            if not head then return end
-
-            if fakeRankGui then fakeRankGui:Destroy() end
-
-            fakeRankGui = Instance.new("BillboardGui")
-            fakeRankGui.Name = "FakeRankBadge"
-            fakeRankGui.Adornee = head
-            fakeRankGui.Size = UDim2.new(3, 0, 3, 0)
-            fakeRankGui.StudsOffset = Vector3.new(0, 5, 0)
-            fakeRankGui.AlwaysOnTop = true
-            fakeRankGui.MaxDistance = 250
-
-            local img = Instance.new("ImageLabel")
-            img.Parent = fakeRankGui
-            img.Size = UDim2.new(1, 0, 1, 0)
-            img.BackgroundTransparency = 1
-            img.Image = rankImages[currentFakeRank] or ""
-            img.ScaleType = Enum.ScaleType.Fit 
-
-            fakeRankGui.Parent = head
-        end)
-    end)
-end
-
-localPlayer.CharacterAdded:Connect(function(char)
-    task.spawn(function()
-        task.wait(2)
-        applyFakeRank()
-    end)
-end)
-
-TrollTab:CreateDropdown({
-    Name = "Fake Leaderboard Badge",
-    Options = {"None", "Rank 1-10 Badge", "Rank 11-30 Badge", "Rank 31-70 Badge", "Rank 71-100 Badge"},
-    CurrentOption = {"None"},
-    MultipleOptions = false,
-    Flag = "FakeRankBadgeDropdown",
-    Callback = function(Option)
-        currentFakeRank = Option[1]
-        applyFakeRank()
-    end,
-})
-
-TrollTab:CreateSection("Target Selection")
-
-local trollTargetPlayer = "None"
-
-local TrollDropdown = TrollTab:CreateDropdown({
-    Name = "Select Target",
-    Options = {"None"},
-    CurrentOption = {"None"},
-    MultipleOptions = false,
-    Callback = function(Option) trollTargetPlayer = Option[1] end,
-})
-
-TrollTab:CreateButton({
-    Name = "Refresh Player List",
-    Callback = function()
-        local list = {}
-        for _, plr in ipairs(Players:GetPlayers()) do
-            if plr ~= localPlayer then table.insert(list, plr.Name) end
-        end
-        if #list == 0 then table.insert(list, "None") end
-        TrollDropdown:Refresh(list, true)
-    end,
-})
-
-TrollTab:CreateSection("Movement Disruptors")
-
-local orbitAngle = 0
-RunService.RenderStepped:Connect(function()
-    if Toggles.UFOOrbit and trollTargetPlayer ~= "None" then
-        local target = Players:FindFirstChild(trollTargetPlayer)
-        local char = localPlayer.Character
-        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") and char and char:FindFirstChild("HumanoidRootPart") then
-            orbitAngle = orbitAngle + 0.1
-            local radius = 5
-            local offset = Vector3.new(math.cos(orbitAngle) * radius, 0, math.sin(orbitAngle) * radius)
-            char.HumanoidRootPart.CFrame = CFrame.lookAt(target.Character.HumanoidRootPart.Position + offset, target.Character.HumanoidRootPart.Position)
-        end
-    end
-end)
-
-TrollTab:CreateToggle({
-    Name = "Orbit Target",
-    CurrentValue = false,
-    Flag = "OrbitToggle",
-    Callback = function(Value)
-        Toggles.UFOOrbit = Value
-    end,
-})
-
-RunService.RenderStepped:Connect(function()
-    if Toggles.SeizureSpin then
-        local char = localPlayer.Character
-        if char and char:FindFirstChild("HumanoidRootPart") then
-            char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.Angles(math.rad(math.random(1, 360)), math.rad(math.random(1, 360)), math.rad(math.random(1, 360)))
-        end
-    end
-end)
-
-TrollTab:CreateToggle({
-    Name = "Fast Spin",
-    CurrentValue = false,
-    Flag = "SeizureSpinToggle",
-    Callback = function(Value)
-        Toggles.SeizureSpin = Value
-    end,
-})
-
-TrollTab:CreateSection("Visual Glitches")
-
-task.spawn(function()
-    while task.wait(0.05) do
-        if Toggles.ServerSpooker then
-            local plrs = Players:GetPlayers()
-            if #plrs > 1 then
-                local randomPlr = plrs[math.random(1, #plrs)]
-                if randomPlr ~= localPlayer and randomPlr.Character and randomPlr.Character:FindFirstChild("HumanoidRootPart") then
-                    local char = localPlayer.Character
-                    if char and char:FindFirstChild("HumanoidRootPart") then
-                        char.HumanoidRootPart.CFrame = randomPlr.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
-                    end
-                end
-            end
-        end
-    end
-end)
-
-TrollTab:CreateToggle({
-    Name = "Flicker Random Players",
-    CurrentValue = false,
-    Flag = "ServerSpookerToggle",
-    Callback = function(Value)
-        Toggles.ServerSpooker = Value
-    end,
-})
-
-task.spawn(function()
-    local list = {}
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= localPlayer then table.insert(list, plr.Name) end
-    end
-    if #list == 0 then table.insert(list, "None") end
-    TrollDropdown:Refresh(list, true)
-end)
-
----------------------------------------------------------
--- 3. PROTECTION TAB
----------------------------------------------------------
-ProtectionTab:CreateSection("Performance Boost")
+ProtectionTab:CreateSection("FPS")
 
 local FpsBoosterBtnObj
 FpsBoosterBtnObj = ProtectionTab:CreateButton({
@@ -827,11 +652,11 @@ FpsBoosterBtnObj = ProtectionTab:CreateButton({
     end,
 })
 
-ProtectionTab:CreateSection("Network Failsafes")
+ProtectionTab:CreateSection("Auto Reconnect")
 
 local AutoReconnectToggleObj
 AutoReconnectToggleObj = ProtectionTab:CreateToggle({
-    Name = "Instant Auto-Reconnect",
+    Name = "Instant Auto Reconnect",
     CurrentValue = false, 
     Flag = "AutoReconnectToggle",
     Callback = function(Value)
@@ -844,7 +669,7 @@ task.spawn(function()
     local function forceRejoin()
         if reconnecting then return end
         reconnecting = true
-        SendEmergencyPing("⚠️ DISCONNECT - REJOINING ⚠️", "Error detected. Aggressively re-routing to a new server.", tonumber(0xFFA500))
+        SendEmergencyPing("DISCONNECT - REJOINING", "Error detected. Aggressively re-routing to a new server.", tonumber(0xFFA500))
         WriteHopState()
         
         task.spawn(function()
@@ -885,7 +710,7 @@ end)
 
 local AntiLagToggleObj
 AntiLagToggleObj = ProtectionTab:CreateToggle({
-    Name = "Anti-Lag Server Hop",
+    Name = "Anti Lag Server Hop",
     CurrentValue = false,
     Flag = "AntiLagToggle",
     Callback = function(Value)
@@ -897,7 +722,7 @@ AntiLagToggleObj = ProtectionTab:CreateToggle({
                         local pingString = Stats.Network.ServerStatsItem["Data Ping"]:GetValueString()
                         local currentPing = tonumber(string.match(pingString, "%d+"))
                         if currentPing and currentPing >= 750 then
-                            SendEmergencyPing("📡 SEVERE LAG - HOPPING SERVERS 📡", "Ping spiked. The script is automatically hopping.", tonumber(0x800080))
+                            SendEmergencyPing("SEVERE LAG - HOPPING SERVERS", "Ping spiked. The script is automatically hopping.", tonumber(0x800080))
                             WriteHopState()
                             task.wait(1)
                             TeleportService:Teleport(game.PlaceId, localPlayer)
@@ -910,11 +735,11 @@ AntiLagToggleObj = ProtectionTab:CreateToggle({
     end,
 })
 
-ProtectionTab:CreateSection("Mod & Admin Detection")
+ProtectionTab:CreateSection("Admin Evader")
 
 local AntiModToggleObj
 AntiModToggleObj = ProtectionTab:CreateToggle({
-    Name = "Anti-Mod Server Hop",
+    Name = "Anti Mod Server Hop",
     CurrentValue = false,
     Flag = "AntiModToggle",
     Callback = function(Value)
@@ -925,7 +750,7 @@ AntiModToggleObj = ProtectionTab:CreateToggle({
 Players.PlayerAdded:Connect(function(plr)
     if Toggles.AntiMod then
         if plr:GetRankInGroup(game.CreatorId) > 0 or string.match(plr.Name:lower(), "admin") then
-            SendEmergencyPing("🚨 MOD DETECTED 🚨", "Developer joined the lobby. Emergency hop.", tonumber(0xFF0000))
+            SendEmergencyPing("MOD DETECTED", "Developer joined the lobby. Emergency hop.", tonumber(0xFF0000))
             WriteHopState()
             task.wait(1)
             TeleportService:Teleport(game.PlaceId, localPlayer)
@@ -934,7 +759,487 @@ Players.PlayerAdded:Connect(function(plr)
 end)
 
 ---------------------------------------------------------
--- 4. LEVEL ANALYTICS TAB
+-- 3. COMBAT TAB 
+---------------------------------------------------------
+local espThread = nil
+local espObjects = {}
+local hitboxSize = 10
+local hitboxThread = nil
+local originalSizes = {}
+
+CombatTab:CreateSection("Hitbox")
+
+local function RestoreHitboxes()
+    for char, data in pairs(originalSizes) do
+        pcall(function()
+            local hrp = char:FindFirstChild("HumanoidRootPart")
+            if hrp then 
+                hrp.Size = data.Size
+                hrp.Transparency = data.Transparency
+                hrp.CanCollide = data.CanCollide
+                if hrp:FindFirstChild("HitboxOutline") then hrp.HitboxOutline:Destroy() end
+            end
+        end)
+    end
+    originalSizes = {}
+end
+
+CombatTab:CreateInput({
+    Name = "Hitbox Size",
+    PlaceholderText = "Type size",
+    RemoveTextAfterFocusLost = false,
+    Callback = function(Text)
+        local val = tonumber(Text)
+        if val then hitboxSize = val end
+    end,
+})
+
+CombatTab:CreateToggle({
+    Name = "Enable Hitbox Expander",
+    CurrentValue = false,
+    Flag = "HitboxToggle",
+    Callback = function(Value)
+        if Value then
+            hitboxThread = task.spawn(function()
+                while true do
+                    for _, plr in ipairs(Players:GetPlayers()) do
+                        if plr ~= localPlayer and plr.Character then
+                            local char = plr.Character
+                            local hrp = char:FindFirstChild("HumanoidRootPart")
+                            if hrp then
+                                if not originalSizes[char] then 
+                                    originalSizes[char] = {Size = hrp.Size, Transparency = hrp.Transparency, CanCollide = hrp.CanCollide} 
+                                end
+                                pcall(function()
+                                    hrp.Size = v3New(hitboxSize, hitboxSize, hitboxSize)
+                                    hrp.Transparency = 0.8
+                                    hrp.CanCollide = false
+                                    
+                                    if not hrp:FindFirstChild("HitboxOutline") then
+                                        local outline = Instance.new("SelectionBox")
+                                        outline.Name = "HitboxOutline"
+                                        outline.Adornee = hrp
+                                        outline.LineThickness = 0.05
+                                        outline.Color3 = Color3.fromRGB(255, 255, 255)
+                                        outline.SurfaceTransparency = 0.9 
+                                        outline.SurfaceColor3 = Color3.fromRGB(255, 255, 255)
+                                        outline.Parent = hrp
+                                    end
+                                end)
+                            end
+                        end
+                    end
+                    task.wait(0.1)
+                end
+            end)
+        else
+            if hitboxThread then task.cancel(hitboxThread); hitboxThread = nil end
+            RestoreHitboxes()
+        end
+    end,
+})
+
+CombatTab:CreateSection("Kill Aura")
+
+local selectedAuraPlayer = nil
+local auraThread = nil
+
+local AuraDropdown = CombatTab:CreateDropdown({
+    Name = "Select Target",
+    Options = {"None"},
+    CurrentOption = {"None"},
+    MultipleOptions = false,
+    Callback = function(Option) selectedAuraPlayer = Option[1] end,
+})
+
+CombatTab:CreateButton({
+    Name = "Refresh Player List",
+    Callback = function()
+        local list = {}
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= localPlayer then table.insert(list, plr.Name) end
+        end
+        if #list == 0 then table.insert(list, "None") end
+        AuraDropdown:Refresh(list, true)
+    end,
+})
+
+local function ManageKillAura()
+    if Toggles.NormalKillAura or Toggles.AttachKillAura then
+        if auraThread then task.cancel(auraThread) end
+        auraThread = task.spawn(function()
+            while Toggles.NormalKillAura or Toggles.AttachKillAura do
+                if selectedAuraPlayer and selectedAuraPlayer ~= "None" then
+                    local targetPlr = Players:FindFirstChild(selectedAuraPlayer)
+                    if targetPlr and targetPlr.Character and targetPlr.Character:FindFirstChild("HumanoidRootPart") and targetPlr.Character:FindFirstChild("Humanoid") and targetPlr.Character.Humanoid.Health > 0 then
+                        
+                        KillAuraTargetHrp = targetPlr.Character.HumanoidRootPart
+                        local char = localPlayer.Character
+                        local myHrp = char and char:FindFirstChild("HumanoidRootPart")
+
+                        if Toggles.AttachKillAura and myHrp then
+                            myHrp.CFrame = KillAuraTargetHrp.CFrame * cfNew(0, 15, 0)
+                            myHrp.CFrame = CFrame.lookAt(myHrp.Position, KillAuraTargetHrp.Position)
+                        end
+
+                        pcall(function()
+                            ReplicatedStorage.DamageEvent:FireServer({
+                                ["multiply"] = 1, 
+                                ["action"] = "hit", 
+                                ["enemyHum"] = targetPlr.Character.Humanoid
+                            })
+                        end)
+                    else
+                        KillAuraTargetHrp = nil
+                    end
+                else
+                    KillAuraTargetHrp = nil
+                end
+                task.wait(0.1)
+            end
+        end)
+    else
+        KillAuraTargetHrp = nil
+        if auraThread then task.cancel(auraThread); auraThread = nil end
+    end
+end
+
+CombatTab:CreateToggle({
+    Name = "Normal Kill Aura",
+    CurrentValue = false,
+    Flag = "NormalAuraToggle",
+    Callback = function(Value)
+        Toggles.NormalKillAura = Value
+        ManageKillAura()
+    end,
+})
+
+CombatTab:CreateToggle({
+    Name = "Attach Kill Aura",
+    CurrentValue = false,
+    Flag = "AttachAuraToggle",
+    Callback = function(Value)
+        Toggles.AttachKillAura = Value
+        ManageKillAura()
+    end,
+})
+
+task.spawn(function()
+    local list = {}
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= localPlayer then table.insert(list, plr.Name) end
+    end
+    if #list == 0 then table.insert(list, "None") end
+    AuraDropdown:Refresh(list, true)
+end)
+
+CombatTab:CreateSection("ESP")
+
+local function ClearEsp()
+    for _, obj in pairs(espObjects) do pcall(function() obj:Destroy() end) end
+    espObjects = {}
+end
+
+CombatTab:CreateToggle({
+    Name = "Player ESP",
+    CurrentValue = false,
+    Flag = "EspToggle",
+    Callback = function(Value)
+        if Value then
+            espThread = task.spawn(function()
+                while true do
+                    ClearEsp()
+                    for _, plr in ipairs(Players:GetPlayers()) do
+                        if plr ~= localPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+                            local char = plr.Character
+                            local hum = char:FindFirstChild("Humanoid")
+                            
+                            pcall(function()
+                                local highlight = Instance.new("Highlight")
+                                highlight.Adornee = char
+                                highlight.FillColor = sharedVisualColor
+                                highlight.OutlineColor = sharedVisualColor
+                                highlight.FillTransparency = 0.5
+                                highlight.OutlineTransparency = 0
+                                highlight.Parent = char
+                                table.insert(espObjects, highlight)
+                            end)
+
+                            pcall(function()
+                                local bgui = Instance.new("BillboardGui")
+                                bgui.Name = "EspInfo"
+                                bgui.Adornee = char:FindFirstChild("Head") or char.HumanoidRootPart
+                                bgui.Size = UDim2.new(0, 100, 0, 40)
+                                bgui.StudsOffset = Vector3.new(0, 2.5, 0)
+                                bgui.AlwaysOnTop = true
+
+                                local txt = Instance.new("TextLabel")
+                                txt.Size = UDim2.new(1, 0, 1, 0)
+                                txt.BackgroundTransparency = 1
+                                txt.TextColor3 = Color3.fromRGB(255, 255, 255)
+                                txt.TextStrokeTransparency = 0 
+                                txt.TextSize = 11
+                                txt.Font = Enum.Font.GothamBold
+                                
+                                local lvl = plr:FindFirstChild("leaderstats") and plr.leaderstats:FindFirstChild("Level") and plr.leaderstats.Level.Value or 0
+                                local hp = hum and math.floor(hum.Health) or 0
+                                local maxHp = hum and math.floor(hum.MaxHealth) or 0
+
+                                txt.Text = string.format("Lv. %s %s\nHP: %s / %s", FormatNum(lvl), plr.Name, FormatNum(hp), FormatNum(maxHp))
+                                txt.Parent = bgui
+                                bgui.Parent = char
+                                table.insert(espObjects, bgui)
+                            end)
+                        end
+                    end
+                    task.wait(1) 
+                end
+            end)
+        else
+            if espThread then task.cancel(espThread); espThread = nil end
+            ClearEsp()
+        end
+    end,
+})
+
+CombatTab:CreateToggle({
+    Name = "Rainbow ESP Color",
+    CurrentValue = false,
+    Flag = "RainbowEspToggle",
+    Callback = function(Value)
+        rainbowVisuals = Value
+        if not Value then sharedVisualColor = Color3.fromRGB(255, 50, 50) end
+    end,
+})
+
+CombatTab:CreateColorPicker({
+    Name = "ESP Color",
+    Color = Color3.fromRGB(255, 50, 50),
+    Flag = "EspColorPicker",
+    Callback = function(Value)
+        if not rainbowVisuals then sharedVisualColor = Value end
+    end,
+})
+
+---------------------------------------------------------
+-- 4. TROLL TAB
+---------------------------------------------------------
+TrollTab:CreateSection("Fake Badges")
+
+local currentFakeRank = "None"
+local fakeRankGui = nil
+
+local rankImages = {
+    ["Rank 1-10 Badge"] = "rbxassetid://13321938624",
+    ["Rank 11-30 Badge"] = "rbxassetid://13321938398",
+    ["Rank 31-70 Badge"] = "rbxassetid://13321938232",
+    ["Rank 71-100 Badge"] = "rbxassetid://13321938751"
+}
+
+local function applyFakeRank()
+    task.spawn(function()
+        pcall(function()
+            if currentFakeRank == "None" then
+                if fakeRankGui then fakeRankGui:Destroy() end
+                return
+            end
+
+            local char = localPlayer.Character
+            if not char then return end
+            
+            local head = char:WaitForChild("Head", 5)
+            if not head then return end
+
+            if fakeRankGui then fakeRankGui:Destroy() end
+
+            fakeRankGui = Instance.new("BillboardGui")
+            fakeRankGui.Name = "FakeRankBadge"
+            fakeRankGui.Adornee = head
+            -- Finely dropped down to 3.2 height to sit flush, locked at 3x3 size
+            fakeRankGui.Size = UDim2.new(3, 0, 3, 0)
+            fakeRankGui.StudsOffset = Vector3.new(0, 3.2, 0)
+            fakeRankGui.AlwaysOnTop = true
+            fakeRankGui.MaxDistance = 250
+
+            local img = Instance.new("ImageLabel")
+            img.Parent = fakeRankGui
+            img.Size = UDim2.new(1, 0, 1, 0)
+            img.BackgroundTransparency = 1
+            img.Image = rankImages[currentFakeRank] or ""
+            img.ScaleType = Enum.ScaleType.Fit 
+
+            fakeRankGui.Parent = head
+        end)
+    end)
+end
+
+localPlayer.CharacterAdded:Connect(function(char)
+    task.spawn(function()
+        task.wait(2)
+        applyFakeRank()
+    end)
+end)
+
+TrollTab:CreateDropdown({
+    Name = "Fake Leaderboard Badge",
+    Options = {"None", "Rank 1-10 Badge", "Rank 11-30 Badge", "Rank 31-70 Badge", "Rank 71-100 Badge"},
+    CurrentOption = {"None"},
+    MultipleOptions = false,
+    Flag = "FakeRankBadgeDropdown",
+    Callback = function(Option)
+        currentFakeRank = Option[1]
+        applyFakeRank()
+    end,
+})
+
+TrollTab:CreateSection("Choose Player")
+
+local trollTargetPlayer = "None"
+
+local TrollDropdown = TrollTab:CreateDropdown({
+    Name = "Select Target",
+    Options = {"None"},
+    CurrentOption = {"None"},
+    MultipleOptions = false,
+    Callback = function(Option) trollTargetPlayer = Option[1] end,
+})
+
+TrollTab:CreateButton({
+    Name = "Refresh Player List",
+    Callback = function()
+        local list = {}
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= localPlayer then table.insert(list, plr.Name) end
+        end
+        if #list == 0 then table.insert(list, "None") end
+        TrollDropdown:Refresh(list, true)
+    end,
+})
+
+TrollTab:CreateSection("Annoy Players")
+
+local orbitAngle = 0
+RunService.RenderStepped:Connect(function()
+    if Toggles.UFOOrbit and trollTargetPlayer ~= "None" then
+        local target = Players:FindFirstChild(trollTargetPlayer)
+        local char = localPlayer.Character
+        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") and char and char:FindFirstChild("HumanoidRootPart") then
+            -- Increased orbit speed drastically
+            orbitAngle = orbitAngle + 0.4
+            local radius = 5
+            local offset = Vector3.new(math.cos(orbitAngle) * radius, 0, math.sin(orbitAngle) * radius)
+            char.HumanoidRootPart.CFrame = CFrame.lookAt(target.Character.HumanoidRootPart.Position + offset, target.Character.HumanoidRootPart.Position)
+        end
+    end
+end)
+
+TrollTab:CreateToggle({
+    Name = "Orbit Target",
+    CurrentValue = false,
+    Flag = "OrbitToggle",
+    Callback = function(Value)
+        Toggles.UFOOrbit = Value
+    end,
+})
+
+local bangTick = 0
+RunService.RenderStepped:Connect(function()
+    if Toggles.BangPlayer and trollTargetPlayer ~= "None" then
+        local target = Players:FindFirstChild(trollTargetPlayer)
+        local char = localPlayer.Character
+        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") and char and char:FindFirstChild("HumanoidRootPart") then
+            bangTick = bangTick + 1
+            local offsetZ = math.sin(bangTick * 0.8) * 0.5 + 0.5 
+            char.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, offsetZ)
+        end
+    end
+end)
+
+TrollTab:CreateToggle({
+    Name = "Bang Player",
+    CurrentValue = false,
+    Flag = "BangToggle",
+    Callback = function(Value)
+        Toggles.BangPlayer = Value
+    end,
+})
+
+RunService.RenderStepped:Connect(function()
+    if Toggles.SitOnHead and trollTargetPlayer ~= "None" then
+        local target = Players:FindFirstChild(trollTargetPlayer)
+        local char = localPlayer.Character
+        if target and target.Character and target.Character:FindFirstChild("Head") and char and char:FindFirstChild("HumanoidRootPart") then
+            char.HumanoidRootPart.CFrame = target.Character.Head.CFrame * CFrame.new(0, 1.5, 0)
+        end
+    end
+end)
+
+TrollTab:CreateToggle({
+    Name = "Sit On Head",
+    CurrentValue = false,
+    Flag = "SitOnHeadToggle",
+    Callback = function(Value)
+        Toggles.SitOnHead = Value
+    end,
+})
+
+RunService.RenderStepped:Connect(function()
+    if Toggles.SeizureSpin then
+        local char = localPlayer.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.Angles(math.rad(math.random(1, 360)), math.rad(math.random(1, 360)), math.rad(math.random(1, 360)))
+        end
+    end
+end)
+
+TrollTab:CreateToggle({
+    Name = "Fast Spin",
+    CurrentValue = false,
+    Flag = "SeizureSpinToggle",
+    Callback = function(Value)
+        Toggles.SeizureSpin = Value
+    end,
+})
+
+TrollTab:CreateSection("Server Annoyances")
+
+task.spawn(function()
+    while task.wait(0.05) do
+        if Toggles.ServerSpooker then
+            local plrs = Players:GetPlayers()
+            if #plrs > 1 then
+                local randomPlr = plrs[math.random(1, #plrs)]
+                if randomPlr ~= localPlayer and randomPlr.Character and randomPlr.Character:FindFirstChild("HumanoidRootPart") then
+                    local char = localPlayer.Character
+                    if char and char:FindFirstChild("HumanoidRootPart") then
+                        char.HumanoidRootPart.CFrame = randomPlr.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
+                    end
+                end
+            end
+        end
+    end
+end)
+
+TrollTab:CreateToggle({
+    Name = "Teleport Randomly Fast",
+    CurrentValue = false,
+    Flag = "ServerSpookerToggle",
+    Callback = function(Value)
+        Toggles.ServerSpooker = Value
+    end,
+})
+
+task.spawn(function()
+    local list = {}
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= localPlayer then table.insert(list, plr.Name) end
+    end
+    if #list == 0 then table.insert(list, "None") end
+    TrollDropdown:Refresh(list, true)
+end)
+
+---------------------------------------------------------
+-- 5. LEVEL ANALYTICS TAB
 ---------------------------------------------------------
 local CustomTargetLevel = 0
 local CustomTargetHours = 0
@@ -944,7 +1249,7 @@ local LiveStatsPara = AnalyticsTab:CreateParagraph({
     Content = "Loading live data..."
 })
 
-AnalyticsTab:CreateSection("Time-to-Goal Calculator")
+AnalyticsTab:CreateSection("Goal Calculator")
 local GoalResultPara = AnalyticsTab:CreateParagraph({Title = "Estimated Time", Content = "Awaiting input..."})
 
 local displaySecondsToTarget = 0 
@@ -958,7 +1263,7 @@ AnalyticsTab:CreateInput({
     end,
 })
 
-AnalyticsTab:CreateSection("Time Machine Calculator")
+AnalyticsTab:CreateSection("Time Calculator")
 local TimeMachinePara = AnalyticsTab:CreateParagraph({Title = "Projected Level", Content = "Awaiting input..."})
 
 AnalyticsTab:CreateInput({
@@ -970,7 +1275,7 @@ AnalyticsTab:CreateInput({
     end,
 })
 
-AnalyticsTab:CreateSection("Past Completed Days")
+AnalyticsTab:CreateSection("History")
 
 if #trackerData.Logs == 0 then
     AnalyticsTab:CreateParagraph({
@@ -1030,11 +1335,11 @@ task.spawn(function()
         local projected24h = currentLvlPerSec * 86400
         local currentRating = GetPerformanceRating(projected24h, GetHistoricalAverage())
 
-        if isFarming and (currentRating == "[BROKEN / AFK]" or currentRating == "[SLUGGISH]") then
+        if isFarming and (currentRating == "BROKEN AFK" or currentRating == "SLUGGISH") then
             badPerformanceSeconds = badPerformanceSeconds + 1
             if badPerformanceSeconds == 300 then
                 SendSystemWebhook("Efficiency Drop Detected", "Performance has dropped to " .. currentRating .. " for 5 straight minutes. Check your server!", 0xFF0000)
-                SendEmergencyPing("📉 EFFICIENCY DROP DETECTED 📉", "Performance has dropped to " .. currentRating .. " for 5 straight minutes. The script may be broken or you might be stuck.", tonumber(0xFF0000))
+                SendEmergencyPing("EFFICIENCY DROP DETECTED", "Performance has dropped to " .. currentRating .. " for 5 straight minutes. The script may be broken or you might be stuck.", tonumber(0xFF0000))
             end
         elseif isFarming then
             badPerformanceSeconds = 0
@@ -1147,278 +1452,12 @@ task.spawn(function()
 end)
 
 ---------------------------------------------------------
--- 5. COMBAT TAB 
----------------------------------------------------------
-local espThread = nil
-local espObjects = {}
-local hitboxSize = 10
-local hitboxThread = nil
-local originalSizes = {}
-
--- Hitbox Section
-CombatTab:CreateSection("Hitbox")
-
-local function RestoreHitboxes()
-    for char, data in pairs(originalSizes) do
-        pcall(function()
-            local hrp = char:FindFirstChild("HumanoidRootPart")
-            if hrp then 
-                hrp.Size = data.Size
-                hrp.Transparency = data.Transparency
-                hrp.CanCollide = data.CanCollide
-                if hrp:FindFirstChild("HitboxOutline") then hrp.HitboxOutline:Destroy() end
-            end
-        end)
-    end
-    originalSizes = {}
-end
-
-CombatTab:CreateInput({
-    Name = "Hitbox Size",
-    PlaceholderText = "Type size...",
-    RemoveTextAfterFocusLost = false,
-    Callback = function(Text)
-        local val = tonumber(Text)
-        if val then hitboxSize = val end
-    end,
-})
-
-CombatTab:CreateToggle({
-    Name = "Enable Hitbox Expander",
-    CurrentValue = false,
-    Flag = "HitboxToggle",
-    Callback = function(Value)
-        if Value then
-            hitboxThread = task.spawn(function()
-                while true do
-                    for _, plr in ipairs(Players:GetPlayers()) do
-                        if plr ~= localPlayer and plr.Character then
-                            local char = plr.Character
-                            local hrp = char:FindFirstChild("HumanoidRootPart")
-                            if hrp then
-                                if not originalSizes[char] then 
-                                    originalSizes[char] = {Size = hrp.Size, Transparency = hrp.Transparency, CanCollide = hrp.CanCollide} 
-                                end
-                                pcall(function()
-                                    hrp.Size = v3New(hitboxSize, hitboxSize, hitboxSize)
-                                    hrp.Transparency = 0.8
-                                    hrp.CanCollide = false
-                                    
-                                    if not hrp:FindFirstChild("HitboxOutline") then
-                                        local outline = Instance.new("SelectionBox")
-                                        outline.Name = "HitboxOutline"
-                                        outline.Adornee = hrp
-                                        outline.LineThickness = 0.05
-                                        outline.Color3 = Color3.fromRGB(255, 255, 255)
-                                        outline.SurfaceTransparency = 0.9 
-                                        outline.SurfaceColor3 = Color3.fromRGB(255, 255, 255)
-                                        outline.Parent = hrp
-                                    end
-                                end)
-                            end
-                        end
-                    end
-                    task.wait(0.1)
-                end
-            end)
-        else
-            if hitboxThread then task.cancel(hitboxThread); hitboxThread = nil end
-            RestoreHitboxes()
-        end
-    end,
-})
-
--- Kill Aura Section
-CombatTab:CreateSection("Kill Aura")
-
-local selectedAuraPlayer = nil
-local auraThread = nil
-
-local AuraDropdown = CombatTab:CreateDropdown({
-    Name = "Select Target",
-    Options = {"None"},
-    CurrentOption = {"None"},
-    MultipleOptions = false,
-    Callback = function(Option) selectedAuraPlayer = Option[1] end,
-})
-
-CombatTab:CreateButton({
-    Name = "Refresh Player List",
-    Callback = function()
-        local list = {}
-        for _, plr in ipairs(Players:GetPlayers()) do
-            if plr ~= localPlayer then table.insert(list, plr.Name) end
-        end
-        if #list == 0 then table.insert(list, "None") end
-        AuraDropdown:Refresh(list, true)
-    end,
-})
-
-local function ManageKillAura()
-    if Toggles.NormalKillAura or Toggles.AttachKillAura then
-        if auraThread then task.cancel(auraThread) end
-        auraThread = task.spawn(function()
-            while Toggles.NormalKillAura or Toggles.AttachKillAura do
-                if selectedAuraPlayer and selectedAuraPlayer ~= "None" then
-                    local targetPlr = Players:FindFirstChild(selectedAuraPlayer)
-                    if targetPlr and targetPlr.Character and targetPlr.Character:FindFirstChild("HumanoidRootPart") and targetPlr.Character:FindFirstChild("Humanoid") and targetPlr.Character.Humanoid.Health > 0 then
-                        
-                        KillAuraTargetHrp = targetPlr.Character.HumanoidRootPart
-                        local char = localPlayer.Character
-                        local myHrp = char and char:FindFirstChild("HumanoidRootPart")
-
-                        if Toggles.AttachKillAura and myHrp then
-                            myHrp.CFrame = KillAuraTargetHrp.CFrame * cfNew(0, 15, 0)
-                            myHrp.CFrame = CFrame.lookAt(myHrp.Position, KillAuraTargetHrp.Position)
-                        end
-
-                        pcall(function()
-                            ReplicatedStorage.DamageEvent:FireServer({
-                                ["multiply"] = 1, 
-                                ["action"] = "hit", 
-                                ["enemyHum"] = targetPlr.Character.Humanoid
-                            })
-                        end)
-                    else
-                        KillAuraTargetHrp = nil
-                    end
-                else
-                    KillAuraTargetHrp = nil
-                end
-                task.wait(0.1)
-            end
-        end)
-    else
-        KillAuraTargetHrp = nil
-        if auraThread then task.cancel(auraThread); auraThread = nil end
-    end
-end
-
-CombatTab:CreateToggle({
-    Name = "Normal Kill Aura",
-    CurrentValue = false,
-    Flag = "NormalAuraToggle",
-    Callback = function(Value)
-        Toggles.NormalKillAura = Value
-        ManageKillAura()
-    end,
-})
-
-CombatTab:CreateToggle({
-    Name = "Attach Kill Aura",
-    CurrentValue = false,
-    Flag = "AttachAuraToggle",
-    Callback = function(Value)
-        Toggles.AttachKillAura = Value
-        ManageKillAura()
-    end,
-})
-
-task.spawn(function()
-    local list = {}
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= localPlayer then table.insert(list, plr.Name) end
-    end
-    if #list == 0 then table.insert(list, "None") end
-    AuraDropdown:Refresh(list, true)
-end)
-
--- ESP Section
-CombatTab:CreateSection("ESP")
-
-local function ClearEsp()
-    for _, obj in pairs(espObjects) do pcall(function() obj:Destroy() end) end
-    espObjects = {}
-end
-
-CombatTab:CreateToggle({
-    Name = "Player ESP",
-    CurrentValue = false,
-    Flag = "EspToggle",
-    Callback = function(Value)
-        if Value then
-            espThread = task.spawn(function()
-                while true do
-                    ClearEsp()
-                    for _, plr in ipairs(Players:GetPlayers()) do
-                        if plr ~= localPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-                            local char = plr.Character
-                            local hum = char:FindFirstChild("Humanoid")
-                            
-                            pcall(function()
-                                local highlight = Instance.new("Highlight")
-                                highlight.Adornee = char
-                                highlight.FillColor = sharedVisualColor
-                                highlight.OutlineColor = sharedVisualColor
-                                highlight.FillTransparency = 0.5
-                                highlight.OutlineTransparency = 0
-                                highlight.Parent = char
-                                table.insert(espObjects, highlight)
-                            end)
-
-                            pcall(function()
-                                local bgui = Instance.new("BillboardGui")
-                                bgui.Name = "EspInfo"
-                                bgui.Adornee = char:FindFirstChild("Head") or char.HumanoidRootPart
-                                bgui.Size = UDim2.new(0, 100, 0, 40)
-                                bgui.StudsOffset = Vector3.new(0, 2.5, 0)
-                                bgui.AlwaysOnTop = true
-
-                                local txt = Instance.new("TextLabel")
-                                txt.Size = UDim2.new(1, 0, 1, 0)
-                                txt.BackgroundTransparency = 1
-                                txt.TextColor3 = Color3.fromRGB(255, 255, 255)
-                                txt.TextStrokeTransparency = 0 
-                                txt.TextSize = 11
-                                txt.Font = Enum.Font.GothamBold
-                                
-                                local lvl = plr:FindFirstChild("leaderstats") and plr.leaderstats:FindFirstChild("Level") and plr.leaderstats.Level.Value or 0
-                                local hp = hum and math.floor(hum.Health) or 0
-                                local maxHp = hum and math.floor(hum.MaxHealth) or 0
-
-                                txt.Text = string.format("Lv. %s %s\nHP: %s / %s", FormatNum(lvl), plr.Name, FormatNum(hp), FormatNum(maxHp))
-                                txt.Parent = bgui
-                                bgui.Parent = char
-                                table.insert(espObjects, bgui)
-                            end)
-                        end
-                    end
-                    task.wait(1) 
-                end
-            end)
-        else
-            if espThread then task.cancel(espThread); espThread = nil end
-            ClearEsp()
-        end
-    end,
-})
-
-CombatTab:CreateToggle({
-    Name = "Rainbow ESP Color",
-    CurrentValue = false,
-    Flag = "RainbowEspToggle",
-    Callback = function(Value)
-        rainbowVisuals = Value
-        if not Value then sharedVisualColor = Color3.fromRGB(255, 50, 50) end
-    end,
-})
-
-CombatTab:CreateColorPicker({
-    Name = "ESP Color",
-    Color = Color3.fromRGB(255, 50, 50),
-    Flag = "EspColorPicker",
-    Callback = function(Value)
-        if not rainbowVisuals then sharedVisualColor = Value end
-    end,
-})
-
----------------------------------------------------------
 -- 6. DISCORD WEBHOOKS TAB 
 ---------------------------------------------------------
 local hasSentUserExecutionLog = false 
 
 WebhookTab:CreateParagraph({
-    Title = "Auto-Webhook is ACTIVE",
+    Title = "Auto Webhook is ACTIVE",
     Content = "Your stats are automatically being sent every 10 minutes to your Discord."
 })
 
@@ -1678,7 +1717,7 @@ MiscTab:CreateButton({
 })
 
 MiscTab:CreateButton({
-   Name = "Destroy Script & UI",
+   Name = "Destroy Script and UI",
    Callback = function()
        isFarming = false
        Toggles = {}
