@@ -478,7 +478,6 @@ local Window = Rayfield:CreateWindow({
    KeySystem = false
 })
 
--- REORDERED TABS
 local AutoFarmTab   = Window:CreateTab("Auto Farming", 4483362458)
 local ProtectionTab = Window:CreateTab("Protection", 4483362458)
 local CombatTab     = Window:CreateTab("Combat", 4483362458)
@@ -620,7 +619,7 @@ TeleportToggleObj = AutoFarmTab:CreateToggle({
 ---------------------------------------------------------
 -- 2. PROTECTION TAB
 ---------------------------------------------------------
-ProtectionTab:CreateSection("Network and Security")
+ProtectionTab:CreateSection("Network and Client Safety")
 
 local AutoReconnectToggleObj
 AutoReconnectToggleObj = ProtectionTab:CreateToggle({
@@ -669,19 +668,6 @@ AntiModToggleObj = ProtectionTab:CreateToggle({
     end,
 })
 
-Players.PlayerAdded:Connect(function(plr)
-    if Toggles.AntiMod then
-        if plr:GetRankInGroup(game.CreatorId) > 0 or string.match(plr.Name:lower(), "admin") then
-            SendEmergencyPing("MOD DETECTED", "Developer joined the lobby. Emergency hop.", tonumber(0xFF0000))
-            WriteHopState()
-            task.wait(1)
-            TeleportService:Teleport(game.PlaceId, localPlayer)
-        end
-    end
-end)
-
-ProtectionTab:CreateSection("Anti AFK")
-
 local AntiAfkToggleObj
 AntiAfkToggleObj = ProtectionTab:CreateToggle({
     Name = "Anti AFK",
@@ -689,6 +675,15 @@ AntiAfkToggleObj = ProtectionTab:CreateToggle({
     Flag = "AntiCheatFix",
     Callback = function(Value)
         Toggles.VirtualTap = Value
+    end,
+})
+
+local FpsBoosterBtnObj
+FpsBoosterBtnObj = ProtectionTab:CreateButton({
+    Name = "FPS Booster",
+    Callback = function()
+        AdvancedFPSBoost()
+        Rayfield:Notify({Title = "FPS Boosted", Content = "All heavy rendering systems disabled.", Duration = 3})
     end,
 })
 
@@ -701,16 +696,16 @@ localPlayer.Idled:Connect(function()
     end
 end)
 
-ProtectionTab:CreateSection("Performance Boost")
-
-local FpsBoosterBtnObj
-FpsBoosterBtnObj = ProtectionTab:CreateButton({
-    Name = "FPS Booster",
-    Callback = function()
-        AdvancedFPSBoost()
-        Rayfield:Notify({Title = "FPS Boosted", Content = "All heavy rendering systems disabled.", Duration = 3})
-    end,
-})
+Players.PlayerAdded:Connect(function(plr)
+    if Toggles.AntiMod then
+        if plr:GetRankInGroup(game.CreatorId) > 0 or string.match(plr.Name:lower(), "admin") then
+            SendEmergencyPing("MOD DETECTED", "Developer joined the lobby. Emergency hop.", tonumber(0xFF0000))
+            WriteHopState()
+            task.wait(1)
+            TeleportService:Teleport(game.PlaceId, localPlayer)
+        end
+    end
+end)
 
 task.spawn(function()
     local reconnecting = false
@@ -1022,7 +1017,7 @@ CombatTab:CreateColorPicker({
 ---------------------------------------------------------
 -- 4. TROLL TAB
 ---------------------------------------------------------
-TrollTab:CreateSection("Visuals Client Sided")
+TrollTab:CreateSection("Fake Badges (Client Sided)")
 
 local currentFakeRank = "None"
 local fakeRankGui = nil
@@ -1143,8 +1138,7 @@ RunService.RenderStepped:Connect(function()
         local target = Players:FindFirstChild(trollTargetPlayer)
         local char = localPlayer.Character
         if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") and char and char:FindFirstChild("HumanoidRootPart") then
-            -- Extreme high-speed math.sin for the aggressive forward/backward motion
-            local offsetZ = math.sin(tick() * 45) * 1.5
+            local offsetZ = math.sin(tick() * 25) * 2.5 
             char.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, offsetZ)
         end
     end
@@ -1175,27 +1169,6 @@ TrollTab:CreateToggle({
     Flag = "FollowBehindToggle",
     Callback = function(Value)
         Toggles.FollowBehind = Value
-    end,
-})
-
-RunService.RenderStepped:Connect(function()
-    if Toggles.FlingTarget and trollTargetPlayer ~= "None" then
-        local target = Players:FindFirstChild(trollTargetPlayer)
-        local char = localPlayer.Character
-        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") and char and char:FindFirstChild("HumanoidRootPart") then
-            pcall(function()
-                target.Character.HumanoidRootPart.Velocity = Vector3.new(10000, 10000, 10000)
-            end)
-        end
-    end
-end)
-
-TrollTab:CreateToggle({
-    Name = "Fling Target",
-    CurrentValue = false,
-    Flag = "FlingToggle",
-    Callback = function(Value)
-        Toggles.FlingTarget = Value
     end,
 })
 
@@ -1264,7 +1237,7 @@ TrollTab:CreateToggle({
     end,
 })
 
-TrollTab:CreateSection("Self Visuals")
+TrollTab:CreateSection("Self Trolls (Client Sided)")
 
 RunService.RenderStepped:Connect(function()
     if Toggles.SeizureSpin then
@@ -1284,27 +1257,8 @@ TrollTab:CreateToggle({
     end,
 })
 
-RunService.RenderStepped:Connect(function()
-    if Toggles.JitterWalk then
-        local char = localPlayer.Character
-        if char and char:FindFirstChild("HumanoidRootPart") then
-            local hrp = char.HumanoidRootPart
-            hrp.CFrame = hrp.CFrame * CFrame.new(math.random(-1, 1) * 0.5, 0, math.random(-1, 1) * 0.5)
-        end
-    end
-end)
-
 TrollTab:CreateToggle({
-    Name = "Jitter Walk",
-    CurrentValue = false,
-    Flag = "JitterWalkToggle",
-    Callback = function(Value)
-        Toggles.JitterWalk = Value
-    end,
-})
-
-TrollTab:CreateToggle({
-    Name = "Giant Head Client Sided",
+    Name = "Giant Head (Client Sided)",
     CurrentValue = false,
     Flag = "GiantHeadToggle",
     Callback = function(Value)
@@ -1320,6 +1274,59 @@ TrollTab:CreateToggle({
         end)
     end,
 })
+
+RunService.RenderStepped:Connect(function()
+    if Toggles.SlenderMan then
+        local char = localPlayer.Character
+        if char then
+            for _, part in ipairs(char:GetDescendants()) do
+                if part:IsA("BasePart") and part.Name ~= "Head" and part.Name ~= "HumanoidRootPart" then
+                    part.Size = Vector3.new(part.Size.X, 4, part.Size.Z)
+                end
+            end
+        end
+    end
+end)
+
+TrollTab:CreateToggle({
+    Name = "Slender Man Mode (Client Sided)",
+    CurrentValue = false,
+    Flag = "SlenderManToggle",
+    Callback = function(Value)
+        Toggles.SlenderMan = Value
+    end,
+})
+
+RunService.RenderStepped:Connect(function()
+    if Toggles.FlattenChar then
+        local char = localPlayer.Character
+        if char then
+            for _, part in ipairs(char:GetDescendants()) do
+                if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+                    part.Size = Vector3.new(part.Size.X, 0.1, part.Size.Z)
+                end
+            end
+        end
+    end
+end)
+
+TrollTab:CreateToggle({
+    Name = "Flatten Character (Client Sided)",
+    CurrentValue = false,
+    Flag = "FlattenCharToggle",
+    Callback = function(Value)
+        Toggles.FlattenChar = Value
+    end,
+})
+
+task.spawn(function()
+    local list = {}
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= localPlayer then table.insert(list, plr.Name) end
+    end
+    if #list == 0 then table.insert(list, "None") end
+    TrollDropdown:Refresh(list, true)
+end)
 
 ---------------------------------------------------------
 -- 5. LEVEL ANALYTICS TAB
