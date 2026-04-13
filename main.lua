@@ -478,7 +478,6 @@ local Window = Rayfield:CreateWindow({
    KeySystem = false
 })
 
--- REORDERED TABS EXACTLY AS REQUESTED
 local AutoFarmTab   = Window:CreateTab("Auto Farming", 4483362458)
 local ProtectionTab = Window:CreateTab("Protection", 4483362458)
 local CombatTab     = Window:CreateTab("Combat", 4483362458)
@@ -620,39 +619,7 @@ TeleportToggleObj = AutoFarmTab:CreateToggle({
 ---------------------------------------------------------
 -- 2. PROTECTION TAB
 ---------------------------------------------------------
-ProtectionTab:CreateSection("Anti AFK")
-
-local AntiAfkToggleObj
-AntiAfkToggleObj = ProtectionTab:CreateToggle({
-    Name = "Anti AFK",
-    CurrentValue = false, 
-    Flag = "AntiCheatFix",
-    Callback = function(Value)
-        Toggles.VirtualTap = Value
-    end,
-})
-
-localPlayer.Idled:Connect(function()
-    if Toggles.VirtualTap then
-        VirtualUser:CaptureController()
-        VirtualUser:ClickButton2(Vector2.new())
-        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.RightShift, false, game)
-        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.RightShift, false, game)
-    end
-end)
-
-ProtectionTab:CreateSection("FPS")
-
-local FpsBoosterBtnObj
-FpsBoosterBtnObj = ProtectionTab:CreateButton({
-    Name = "FPS Booster",
-    Callback = function()
-        AdvancedFPSBoost()
-        Rayfield:Notify({Title = "FPS Boosted", Content = "All heavy rendering systems disabled.", Duration = 3})
-    end,
-})
-
-ProtectionTab:CreateSection("Auto Reconnect")
+ProtectionTab:CreateSection("Network and Security")
 
 local AutoReconnectToggleObj
 AutoReconnectToggleObj = ProtectionTab:CreateToggle({
@@ -735,8 +702,6 @@ AntiLagToggleObj = ProtectionTab:CreateToggle({
     end,
 })
 
-ProtectionTab:CreateSection("Admin Evader")
-
 local AntiModToggleObj
 AntiModToggleObj = ProtectionTab:CreateToggle({
     Name = "Anti Mod Server Hop",
@@ -757,6 +722,38 @@ Players.PlayerAdded:Connect(function(plr)
         end
     end
 end)
+
+ProtectionTab:CreateSection("Anti AFK")
+
+local AntiAfkToggleObj
+AntiAfkToggleObj = ProtectionTab:CreateToggle({
+    Name = "Anti AFK",
+    CurrentValue = false, 
+    Flag = "AntiCheatFix",
+    Callback = function(Value)
+        Toggles.VirtualTap = Value
+    end,
+})
+
+localPlayer.Idled:Connect(function()
+    if Toggles.VirtualTap then
+        VirtualUser:CaptureController()
+        VirtualUser:ClickButton2(Vector2.new())
+        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.RightShift, false, game)
+        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.RightShift, false, game)
+    end
+end)
+
+ProtectionTab:CreateSection("Performance Boost")
+
+local FpsBoosterBtnObj
+FpsBoosterBtnObj = ProtectionTab:CreateButton({
+    Name = "FPS Booster",
+    Callback = function()
+        AdvancedFPSBoost()
+        Rayfield:Notify({Title = "FPS Boosted", Content = "All heavy rendering systems disabled.", Duration = 3})
+    end,
+})
 
 ---------------------------------------------------------
 -- 3. COMBAT TAB 
@@ -1024,7 +1021,7 @@ CombatTab:CreateColorPicker({
 ---------------------------------------------------------
 -- 4. TROLL TAB
 ---------------------------------------------------------
-TrollTab:CreateSection("Fake Badges")
+TrollTab:CreateSection("Local Cosmetics")
 
 local currentFakeRank = "None"
 local fakeRankGui = nil
@@ -1055,9 +1052,8 @@ local function applyFakeRank()
             fakeRankGui = Instance.new("BillboardGui")
             fakeRankGui.Name = "FakeRankBadge"
             fakeRankGui.Adornee = head
-            -- Finely dropped down to 3.2 height to sit flush, locked at 3x3 size
             fakeRankGui.Size = UDim2.new(3, 0, 3, 0)
-            fakeRankGui.StudsOffset = Vector3.new(0, 3.2, 0)
+            fakeRankGui.StudsOffset = Vector3.new(0, 4, 0)
             fakeRankGui.AlwaysOnTop = true
             fakeRankGui.MaxDistance = 250
 
@@ -1092,7 +1088,7 @@ TrollTab:CreateDropdown({
     end,
 })
 
-TrollTab:CreateSection("Choose Player")
+TrollTab:CreateSection("Target Selection")
 
 local trollTargetPlayer = "None"
 
@@ -1116,7 +1112,7 @@ TrollTab:CreateButton({
     end,
 })
 
-TrollTab:CreateSection("Annoy Players")
+TrollTab:CreateSection("Targeted Harassment")
 
 local orbitAngle = 0
 RunService.RenderStepped:Connect(function()
@@ -1124,7 +1120,6 @@ RunService.RenderStepped:Connect(function()
         local target = Players:FindFirstChild(trollTargetPlayer)
         local char = localPlayer.Character
         if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") and char and char:FindFirstChild("HumanoidRootPart") then
-            -- Increased orbit speed drastically
             orbitAngle = orbitAngle + 0.4
             local radius = 5
             local offset = Vector3.new(math.cos(orbitAngle) * radius, 0, math.sin(orbitAngle) * radius)
@@ -1142,14 +1137,12 @@ TrollTab:CreateToggle({
     end,
 })
 
-local bangTick = 0
 RunService.RenderStepped:Connect(function()
     if Toggles.BangPlayer and trollTargetPlayer ~= "None" then
         local target = Players:FindFirstChild(trollTargetPlayer)
         local char = localPlayer.Character
         if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") and char and char:FindFirstChild("HumanoidRootPart") then
-            bangTick = bangTick + 1
-            local offsetZ = math.sin(bangTick * 0.8) * 0.5 + 0.5 
+            local offsetZ = math.sin(tick() * 45) * 1.5
             char.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, offsetZ)
         end
     end
@@ -1184,24 +1177,25 @@ TrollTab:CreateToggle({
 })
 
 RunService.RenderStepped:Connect(function()
-    if Toggles.SeizureSpin then
+    if Toggles.FollowBehind and trollTargetPlayer ~= "None" then
+        local target = Players:FindFirstChild(trollTargetPlayer)
         local char = localPlayer.Character
-        if char and char:FindFirstChild("HumanoidRootPart") then
-            char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.Angles(math.rad(math.random(1, 360)), math.rad(math.random(1, 360)), math.rad(math.random(1, 360)))
+        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") and char and char:FindFirstChild("HumanoidRootPart") then
+            char.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
         end
     end
 end)
 
 TrollTab:CreateToggle({
-    Name = "Fast Spin",
+    Name = "Follow Behind Target",
     CurrentValue = false,
-    Flag = "SeizureSpinToggle",
+    Flag = "FollowBehindToggle",
     Callback = function(Value)
-        Toggles.SeizureSpin = Value
+        Toggles.FollowBehind = Value
     end,
 })
 
-TrollTab:CreateSection("Server Annoyances")
+TrollTab:CreateSection("Server Wide Trolls")
 
 task.spawn(function()
     while task.wait(0.05) do
@@ -1221,11 +1215,106 @@ task.spawn(function()
 end)
 
 TrollTab:CreateToggle({
-    Name = "Teleport Randomly Fast",
+    Name = "Flicker Around Map",
     CurrentValue = false,
     Flag = "ServerSpookerToggle",
     Callback = function(Value)
         Toggles.ServerSpooker = Value
+    end,
+})
+
+local randomOrbitTarget = nil
+local randomOrbitAngle = 0
+task.spawn(function()
+    while task.wait(3) do
+        if Toggles.OrbitRandom then
+            local plrs = Players:GetPlayers()
+            if #plrs > 1 then
+                randomOrbitTarget = plrs[math.random(1, #plrs)]
+                if randomOrbitTarget == localPlayer then randomOrbitTarget = nil end
+            end
+        else
+            randomOrbitTarget = nil
+        end
+    end
+end)
+
+RunService.RenderStepped:Connect(function()
+    if Toggles.OrbitRandom and randomOrbitTarget and randomOrbitTarget.Character and randomOrbitTarget.Character:FindFirstChild("HumanoidRootPart") then
+        local char = localPlayer.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            randomOrbitAngle = randomOrbitAngle + 0.4
+            local radius = 5
+            local offset = Vector3.new(math.cos(randomOrbitAngle) * radius, 0, math.sin(randomOrbitAngle) * radius)
+            char.HumanoidRootPart.CFrame = CFrame.lookAt(randomOrbitTarget.Character.HumanoidRootPart.Position + offset, randomOrbitTarget.Character.HumanoidRootPart.Position)
+        end
+    end
+end)
+
+TrollTab:CreateToggle({
+    Name = "Orbit Random Players",
+    CurrentValue = false,
+    Flag = "OrbitRandomToggle",
+    Callback = function(Value)
+        Toggles.OrbitRandom = Value
+    end,
+})
+
+TrollTab:CreateSection("Self Visuals")
+
+RunService.RenderStepped:Connect(function()
+    if Toggles.SeizureSpin then
+        local char = localPlayer.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.Angles(math.rad(math.random(1, 360)), math.rad(math.random(1, 360)), math.rad(math.random(1, 360)))
+        end
+    end
+end)
+
+TrollTab:CreateToggle({
+    Name = "Fast Spin",
+    CurrentValue = false,
+    Flag = "SeizureSpinToggle",
+    Callback = function(Value)
+        Toggles.SeizureSpin = Value
+    end,
+})
+
+RunService.RenderStepped:Connect(function()
+    if Toggles.FloorCrawler then
+        local char = localPlayer.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            local hrp = char.HumanoidRootPart
+            hrp.CFrame = CFrame.new(hrp.Position) * CFrame.Angles(math.rad(90), 0, 0)
+        end
+    end
+end)
+
+TrollTab:CreateToggle({
+    Name = "Floor Crawler",
+    CurrentValue = false,
+    Flag = "FloorCrawlerToggle",
+    Callback = function(Value)
+        Toggles.FloorCrawler = Value
+    end,
+})
+
+RunService.RenderStepped:Connect(function()
+    if Toggles.JitterWalk then
+        local char = localPlayer.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            local hrp = char.HumanoidRootPart
+            hrp.CFrame = hrp.CFrame * CFrame.new(math.random(-1, 1) * 0.5, 0, math.random(-1, 1) * 0.5)
+        end
+    end
+end)
+
+TrollTab:CreateToggle({
+    Name = "Jitter Walk",
+    CurrentValue = false,
+    Flag = "JitterWalkToggle",
+    Callback = function(Value)
+        Toggles.JitterWalk = Value
     end,
 })
 
