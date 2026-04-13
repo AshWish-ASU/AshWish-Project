@@ -191,10 +191,6 @@ end
 local sharedVisualColor = Color3.fromRGB(255, 50, 50)
 local rainbowVisuals = false
 
-RunService.RenderStepped:Connect(function()
-    if rainbowVisuals then sharedVisualColor = Color3.fromHSV(os.clock() % 4 / 4, 1, 1) end
-end)
-
 local function FormatNum(value)
     local n = tonumber(value) or 0
     n = mFloor(n)
@@ -1015,9 +1011,114 @@ CombatTab:CreateColorPicker({
 })
 
 ---------------------------------------------------------
--- 4. TROLL TAB
+-- 4. TROLL TAB (Master Optimization Engine)
 ---------------------------------------------------------
-TrollTab:CreateSection("Fake Badges (Client Sided)")
+
+-- GLOBAL RENDER STEPPED ENGINE (Improves FPS)
+local orbitAngle = 0
+local randomOrbitAngle = 0
+local trollTargetPlayer = "None"
+local randomOrbitTarget = nil
+
+-- Size Cache to Reset Character
+local originalSelfSizes = {}
+local function cacheSelfSize(char)
+    if not char then return end
+    for _, part in ipairs(char:GetDescendants()) do
+        if part:IsA("BasePart") and not originalSelfSizes[part] then
+            originalSelfSizes[part] = part.Size
+        end
+    end
+end
+
+local function restoreSelfSize()
+    local char = localPlayer.Character
+    if not char then return end
+    for part, size in pairs(originalSelfSizes) do
+        if part and part.Parent and part:IsDescendantOf(char) then
+            pcall(function() part.Size = size end)
+        end
+    end
+end
+
+task.spawn(function()
+    while task.wait(0.1) do
+        if Toggles.GiantHead or Toggles.StretchChar or Toggles.SquashChar then
+            local char = localPlayer.Character
+            if char then
+                cacheSelfSize(char)
+                for _, part in ipairs(char:GetDescendants()) do
+                    if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+                        pcall(function()
+                            if Toggles.GiantHead and part.Name == "Head" then
+                                part.Size = Vector3.new(5, 5, 5)
+                            elseif part.Name ~= "Head" then
+                                if Toggles.StretchChar then
+                                    part.Size = Vector3.new(originalSelfSizes[part].X, 4, originalSelfSizes[part].Z)
+                                elseif Toggles.SquashChar then
+                                    part.Size = Vector3.new(originalSelfSizes[part].X, 0.1, originalSelfSizes[part].Z)
+                                end
+                            end
+                        end)
+                    end
+                end
+            end
+        end
+    end
+end)
+
+RunService.RenderStepped:Connect(function()
+    if rainbowVisuals then sharedVisualColor = Color3.fromHSV(os.clock() % 4 / 4, 1, 1) end
+    
+    local char = localPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    
+    if hrp then
+        if Toggles.SeizureSpin then
+            hrp.CFrame = hrp.CFrame * CFrame.Angles(math.rad(math.random(1, 360)), math.rad(math.random(1, 360)), math.rad(math.random(1, 360)))
+        end
+        
+        if Toggles.JitterWalk then
+            hrp.CFrame = hrp.CFrame * CFrame.new(math.random(-1, 1) * 0.5, 0, math.random(-1, 1) * 0.5)
+        end
+    end
+
+    if trollTargetPlayer and trollTargetPlayer ~= "None" then
+        local target = Players:FindFirstChild(trollTargetPlayer)
+        local targetChar = target and target.Character
+        local targetHrp = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
+
+        if targetHrp and hrp then
+            if Toggles.UFOOrbit then
+                orbitAngle = orbitAngle + 0.4
+                local radius = 5
+                local offset = Vector3.new(math.cos(orbitAngle) * radius, 0, math.sin(orbitAngle) * radius)
+                hrp.CFrame = CFrame.lookAt(targetHrp.Position + offset, targetHrp.Position)
+            end
+            
+            if Toggles.BangPlayer then
+                local offsetZ = math.sin(tick() * 35) * 3 
+                hrp.CFrame = targetHrp.CFrame * CFrame.new(0, 0, offsetZ)
+            end
+            
+            if Toggles.FollowBehind then
+                hrp.CFrame = targetHrp.CFrame * CFrame.new(0, 0, 3)
+            end
+        end
+    end
+
+    if Toggles.OrbitRandom and randomOrbitTarget then
+        local randHrp = randomOrbitTarget.Character and randomOrbitTarget.Character:FindFirstChild("HumanoidRootPart")
+        if randHrp and hrp then
+            randomOrbitAngle = randomOrbitAngle + 0.4
+            local radius = 5
+            local offset = Vector3.new(math.cos(randomOrbitAngle) * radius, 0, math.sin(randomOrbitAngle) * radius)
+            hrp.CFrame = CFrame.lookAt(randHrp.Position + offset, randHrp.Position)
+        end
+    end
+end)
+
+TrollTab:CreateSection("Fake Badges (Client-Sided)")
 
 local currentFakeRank = "None"
 local fakeRankGui = nil
@@ -1086,8 +1187,6 @@ TrollTab:CreateDropdown({
 
 TrollTab:CreateSection("Target Selection")
 
-local trollTargetPlayer = "None"
-
 local TrollDropdown = TrollTab:CreateDropdown({
     Name = "Select Target",
     Options = {"None"},
@@ -1110,20 +1209,6 @@ TrollTab:CreateButton({
 
 TrollTab:CreateSection("Annoy Players")
 
-local orbitAngle = 0
-RunService.RenderStepped:Connect(function()
-    if Toggles.UFOOrbit and trollTargetPlayer ~= "None" then
-        local target = Players:FindFirstChild(trollTargetPlayer)
-        local char = localPlayer.Character
-        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") and char and char:FindFirstChild("HumanoidRootPart") then
-            orbitAngle = orbitAngle + 0.4
-            local radius = 5
-            local offset = Vector3.new(math.cos(orbitAngle) * radius, 0, math.sin(orbitAngle) * radius)
-            char.HumanoidRootPart.CFrame = CFrame.lookAt(target.Character.HumanoidRootPart.Position + offset, target.Character.HumanoidRootPart.Position)
-        end
-    end
-end)
-
 TrollTab:CreateToggle({
     Name = "Orbit Target",
     CurrentValue = false,
@@ -1133,17 +1218,6 @@ TrollTab:CreateToggle({
     end,
 })
 
-RunService.RenderStepped:Connect(function()
-    if Toggles.BangPlayer and trollTargetPlayer ~= "None" then
-        local target = Players:FindFirstChild(trollTargetPlayer)
-        local char = localPlayer.Character
-        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") and char and char:FindFirstChild("HumanoidRootPart") then
-            local offsetZ = math.sin(tick() * 25) * 2.5 
-            char.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, offsetZ)
-        end
-    end
-end)
-
 TrollTab:CreateToggle({
     Name = "Bang Player",
     CurrentValue = false,
@@ -1152,16 +1226,6 @@ TrollTab:CreateToggle({
         Toggles.BangPlayer = Value
     end,
 })
-
-RunService.RenderStepped:Connect(function()
-    if Toggles.FollowBehind and trollTargetPlayer ~= "None" then
-        local target = Players:FindFirstChild(trollTargetPlayer)
-        local char = localPlayer.Character
-        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") and char and char:FindFirstChild("HumanoidRootPart") then
-            char.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
-        end
-    end
-end)
 
 TrollTab:CreateToggle({
     Name = "Follow Behind Target",
@@ -1200,8 +1264,6 @@ TrollTab:CreateToggle({
     end,
 })
 
-local randomOrbitTarget = nil
-local randomOrbitAngle = 0
 task.spawn(function()
     while task.wait(3) do
         if Toggles.OrbitRandom then
@@ -1216,18 +1278,6 @@ task.spawn(function()
     end
 end)
 
-RunService.RenderStepped:Connect(function()
-    if Toggles.OrbitRandom and randomOrbitTarget and randomOrbitTarget.Character and randomOrbitTarget.Character:FindFirstChild("HumanoidRootPart") then
-        local char = localPlayer.Character
-        if char and char:FindFirstChild("HumanoidRootPart") then
-            randomOrbitAngle = randomOrbitAngle + 0.4
-            local radius = 5
-            local offset = Vector3.new(math.cos(randomOrbitAngle) * radius, 0, math.sin(randomOrbitAngle) * radius)
-            char.HumanoidRootPart.CFrame = CFrame.lookAt(randomOrbitTarget.Character.HumanoidRootPart.Position + offset, randomOrbitTarget.Character.HumanoidRootPart.Position)
-        end
-    end
-end)
-
 TrollTab:CreateToggle({
     Name = "Orbit Random Players",
     CurrentValue = false,
@@ -1237,16 +1287,7 @@ TrollTab:CreateToggle({
     end,
 })
 
-TrollTab:CreateSection("Self Trolls (Client Sided)")
-
-RunService.RenderStepped:Connect(function()
-    if Toggles.SeizureSpin then
-        local char = localPlayer.Character
-        if char and char:FindFirstChild("HumanoidRootPart") then
-            char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.Angles(math.rad(math.random(1, 360)), math.rad(math.random(1, 360)), math.rad(math.random(1, 360)))
-        end
-    end
-end)
+TrollTab:CreateSection("Self Trolls (Client-Sided)")
 
 TrollTab:CreateToggle({
     Name = "Fast Spin",
@@ -1258,64 +1299,47 @@ TrollTab:CreateToggle({
 })
 
 TrollTab:CreateToggle({
-    Name = "Giant Head (Client Sided)",
+    Name = "Jitter Walk",
+    CurrentValue = false,
+    Flag = "JitterWalkToggle",
+    Callback = function(Value)
+        Toggles.JitterWalk = Value
+    end,
+})
+
+TrollTab:CreateToggle({
+    Name = "Giant Head (Client-Sided)",
     CurrentValue = false,
     Flag = "GiantHeadToggle",
     Callback = function(Value)
-        pcall(function()
-            local char = localPlayer.Character
-            if char and char:FindFirstChild("Head") then
-                if Value then
-                    char.Head.Size = Vector3.new(5, 5, 5)
-                else
-                    char.Head.Size = Vector3.new(1.2, 1.2, 1.2)
-                end
-            end
-        end)
+        Toggles.GiantHead = Value
+        if not Value and not Toggles.StretchChar and not Toggles.SquashChar then
+            restoreSelfSize()
+        end
     end,
 })
 
-RunService.RenderStepped:Connect(function()
-    if Toggles.SlenderMan then
-        local char = localPlayer.Character
-        if char then
-            for _, part in ipairs(char:GetDescendants()) do
-                if part:IsA("BasePart") and part.Name ~= "Head" and part.Name ~= "HumanoidRootPart" then
-                    part.Size = Vector3.new(part.Size.X, 4, part.Size.Z)
-                end
-            end
-        end
-    end
-end)
-
 TrollTab:CreateToggle({
-    Name = "Slender Man Mode (Client Sided)",
+    Name = "Stretch Character (Client-Sided)",
     CurrentValue = false,
-    Flag = "SlenderManToggle",
+    Flag = "StretchCharToggle",
     Callback = function(Value)
-        Toggles.SlenderMan = Value
+        Toggles.StretchChar = Value
+        if not Value and not Toggles.GiantHead and not Toggles.SquashChar then
+            restoreSelfSize()
+        end
     end,
 })
 
-RunService.RenderStepped:Connect(function()
-    if Toggles.FlattenChar then
-        local char = localPlayer.Character
-        if char then
-            for _, part in ipairs(char:GetDescendants()) do
-                if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-                    part.Size = Vector3.new(part.Size.X, 0.1, part.Size.Z)
-                end
-            end
-        end
-    end
-end)
-
 TrollTab:CreateToggle({
-    Name = "Flatten Character (Client Sided)",
+    Name = "Squash Character (Client-Sided)",
     CurrentValue = false,
-    Flag = "FlattenCharToggle",
+    Flag = "SquashCharToggle",
     Callback = function(Value)
-        Toggles.FlattenChar = Value
+        Toggles.SquashChar = Value
+        if not Value and not Toggles.GiantHead and not Toggles.StretchChar then
+            restoreSelfSize()
+        end
     end,
 })
 
