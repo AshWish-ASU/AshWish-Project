@@ -641,7 +641,7 @@ end)
 ---------------------------------------------------------
 -- 2. TROLL TAB
 ---------------------------------------------------------
-TrollTab:CreateSection("Visual Exploits")
+TrollTab:CreateSection("Local Cosmetics")
 
 local currentFakeRank = "None"
 local fakeRankGui = nil
@@ -674,7 +674,7 @@ local function applyFakeRank()
             fakeRankGui.Name = "FakeRankBadge"
             fakeRankGui.Adornee = head
             fakeRankGui.Size = UDim2.new(3, 0, 3, 0)
-            fakeRankGui.StudsOffset = Vector3.new(0, 4, 0)
+            fakeRankGui.StudsOffset = Vector3.new(0, 5, 0)
             fakeRankGui.AlwaysOnTop = true
             fakeRankGui.MaxDistance = 250
 
@@ -709,12 +709,12 @@ TrollTab:CreateDropdown({
     end,
 })
 
-TrollTab:CreateSection("Targeted Harassment")
+TrollTab:CreateSection("Target Selection")
 
 local trollTargetPlayer = "None"
 
 local TrollDropdown = TrollTab:CreateDropdown({
-    Name = "Select Target Victim",
+    Name = "Select Target",
     Options = {"None"},
     CurrentOption = {"None"},
     MultipleOptions = false,
@@ -733,7 +733,8 @@ TrollTab:CreateButton({
     end,
 })
 
--- The Mosquito (UFO Orbit)
+TrollTab:CreateSection("Movement Disruptors")
+
 local orbitAngle = 0
 RunService.RenderStepped:Connect(function()
     if Toggles.UFOOrbit and trollTargetPlayer ~= "None" then
@@ -749,7 +750,7 @@ RunService.RenderStepped:Connect(function()
 end)
 
 TrollTab:CreateToggle({
-    Name = "UFO Orbit (The Mosquito)",
+    Name = "Orbit Target",
     CurrentValue = false,
     Flag = "OrbitToggle",
     Callback = function(Value)
@@ -757,33 +758,6 @@ TrollTab:CreateToggle({
     end,
 })
 
--- Waterbeam Nuke
-task.spawn(function()
-    while task.wait(0.01) do
-        if Toggles.WaterbeamNuke and trollTargetPlayer ~= "None" then
-            local target = Players:FindFirstChild(trollTargetPlayer)
-            if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-                pcall(function()
-                    local event = ReplicatedStorage:FindFirstChild("WaterbeamEvent")
-                    if event then
-                        event:FireServer({["action"] = "throw", ["destination"] = target.Character.HumanoidRootPart.Position})
-                    end
-                end)
-            end
-        end
-    end
-end)
-
-TrollTab:CreateToggle({
-    Name = "Waterbeam Nuke (Lag Bomb)",
-    CurrentValue = false,
-    Flag = "WaterbeamNukeToggle",
-    Callback = function(Value)
-        Toggles.WaterbeamNuke = Value
-    end,
-})
-
--- Seizure Spin
 RunService.RenderStepped:Connect(function()
     if Toggles.SeizureSpin then
         local char = localPlayer.Character
@@ -794,7 +768,7 @@ RunService.RenderStepped:Connect(function()
 end)
 
 TrollTab:CreateToggle({
-    Name = "Seizure Spin",
+    Name = "Fast Spin",
     CurrentValue = false,
     Flag = "SeizureSpinToggle",
     Callback = function(Value)
@@ -802,9 +776,8 @@ TrollTab:CreateToggle({
     end,
 })
 
-TrollTab:CreateSection("Psychological Warfare")
+TrollTab:CreateSection("Visual Glitches")
 
--- Server Spooker
 task.spawn(function()
     while task.wait(0.05) do
         if Toggles.ServerSpooker then
@@ -823,7 +796,7 @@ task.spawn(function()
 end)
 
 TrollTab:CreateToggle({
-    Name = "Server Spooker (Ghost Flash)",
+    Name = "Flicker Random Players",
     CurrentValue = false,
     Flag = "ServerSpookerToggle",
     Callback = function(Value)
@@ -858,7 +831,7 @@ ProtectionTab:CreateSection("Network Failsafes")
 
 local AutoReconnectToggleObj
 AutoReconnectToggleObj = ProtectionTab:CreateToggle({
-    Name = "Instant Auto-Reconnect Mobile",
+    Name = "Instant Auto-Reconnect",
     CurrentValue = false, 
     Flag = "AutoReconnectToggle",
     Callback = function(Value)
