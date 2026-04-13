@@ -479,7 +479,6 @@ local Window = Rayfield:CreateWindow({
    KeySystem = false
 })
 
--- MOVED TROLL TAB TO THE VERY FRONT SO IT DOESNT GET CUT OFF ON MOBILE SCREENS
 local AutoFarmTab = Window:CreateTab("Auto Farming", 4483362458)
 local TrollTab    = Window:CreateTab("Troll", 4483362458)
 local ProtectionTab = Window:CreateTab("Protection", 4483362458)
@@ -640,7 +639,7 @@ localPlayer.Idled:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 2. TROLL TAB & VISUAL EXPLOITS
+-- 2. TROLL TAB
 ---------------------------------------------------------
 TrollTab:CreateSection("Visual Exploits")
 
@@ -675,7 +674,7 @@ local function applyFakeRank()
             fakeRankGui.Name = "FakeRankBadge"
             fakeRankGui.Adornee = head
             fakeRankGui.Size = UDim2.new(3, 0, 3, 0)
-            fakeRankGui.StudsOffset = Vector3.new(0, 5, 0)
+            fakeRankGui.StudsOffset = Vector3.new(0, 4, 0)
             fakeRankGui.AlwaysOnTop = true
             fakeRankGui.MaxDistance = 250
 
@@ -710,10 +709,136 @@ TrollTab:CreateDropdown({
     end,
 })
 
-TrollTab:CreateParagraph({
-    Title = "More Trolls Coming Soon",
-    Content = "Additional client-side visual features will be added here."
+TrollTab:CreateSection("Targeted Harassment")
+
+local trollTargetPlayer = "None"
+
+local TrollDropdown = TrollTab:CreateDropdown({
+    Name = "Select Target Victim",
+    Options = {"None"},
+    CurrentOption = {"None"},
+    MultipleOptions = false,
+    Callback = function(Option) trollTargetPlayer = Option[1] end,
 })
+
+TrollTab:CreateButton({
+    Name = "Refresh Player List",
+    Callback = function()
+        local list = {}
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= localPlayer then table.insert(list, plr.Name) end
+        end
+        if #list == 0 then table.insert(list, "None") end
+        TrollDropdown:Refresh(list, true)
+    end,
+})
+
+-- The Mosquito (UFO Orbit)
+local orbitAngle = 0
+RunService.RenderStepped:Connect(function()
+    if Toggles.UFOOrbit and trollTargetPlayer ~= "None" then
+        local target = Players:FindFirstChild(trollTargetPlayer)
+        local char = localPlayer.Character
+        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") and char and char:FindFirstChild("HumanoidRootPart") then
+            orbitAngle = orbitAngle + 0.1
+            local radius = 5
+            local offset = Vector3.new(math.cos(orbitAngle) * radius, 0, math.sin(orbitAngle) * radius)
+            char.HumanoidRootPart.CFrame = CFrame.lookAt(target.Character.HumanoidRootPart.Position + offset, target.Character.HumanoidRootPart.Position)
+        end
+    end
+end)
+
+TrollTab:CreateToggle({
+    Name = "UFO Orbit (The Mosquito)",
+    CurrentValue = false,
+    Flag = "OrbitToggle",
+    Callback = function(Value)
+        Toggles.UFOOrbit = Value
+    end,
+})
+
+-- Waterbeam Nuke
+task.spawn(function()
+    while task.wait(0.01) do
+        if Toggles.WaterbeamNuke and trollTargetPlayer ~= "None" then
+            local target = Players:FindFirstChild(trollTargetPlayer)
+            if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+                pcall(function()
+                    local event = ReplicatedStorage:FindFirstChild("WaterbeamEvent")
+                    if event then
+                        event:FireServer({["action"] = "throw", ["destination"] = target.Character.HumanoidRootPart.Position})
+                    end
+                end)
+            end
+        end
+    end
+end)
+
+TrollTab:CreateToggle({
+    Name = "Waterbeam Nuke (Lag Bomb)",
+    CurrentValue = false,
+    Flag = "WaterbeamNukeToggle",
+    Callback = function(Value)
+        Toggles.WaterbeamNuke = Value
+    end,
+})
+
+-- Seizure Spin
+RunService.RenderStepped:Connect(function()
+    if Toggles.SeizureSpin then
+        local char = localPlayer.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.Angles(math.rad(math.random(1, 360)), math.rad(math.random(1, 360)), math.rad(math.random(1, 360)))
+        end
+    end
+end)
+
+TrollTab:CreateToggle({
+    Name = "Seizure Spin",
+    CurrentValue = false,
+    Flag = "SeizureSpinToggle",
+    Callback = function(Value)
+        Toggles.SeizureSpin = Value
+    end,
+})
+
+TrollTab:CreateSection("Psychological Warfare")
+
+-- Server Spooker
+task.spawn(function()
+    while task.wait(0.05) do
+        if Toggles.ServerSpooker then
+            local plrs = Players:GetPlayers()
+            if #plrs > 1 then
+                local randomPlr = plrs[math.random(1, #plrs)]
+                if randomPlr ~= localPlayer and randomPlr.Character and randomPlr.Character:FindFirstChild("HumanoidRootPart") then
+                    local char = localPlayer.Character
+                    if char and char:FindFirstChild("HumanoidRootPart") then
+                        char.HumanoidRootPart.CFrame = randomPlr.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
+                    end
+                end
+            end
+        end
+    end
+end)
+
+TrollTab:CreateToggle({
+    Name = "Server Spooker (Ghost Flash)",
+    CurrentValue = false,
+    Flag = "ServerSpookerToggle",
+    Callback = function(Value)
+        Toggles.ServerSpooker = Value
+    end,
+})
+
+task.spawn(function()
+    local list = {}
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= localPlayer then table.insert(list, plr.Name) end
+    end
+    if #list == 0 then table.insert(list, "None") end
+    TrollDropdown:Refresh(list, true)
+end)
 
 ---------------------------------------------------------
 -- 3. PROTECTION TAB
