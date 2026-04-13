@@ -478,6 +478,7 @@ local Window = Rayfield:CreateWindow({
    KeySystem = false
 })
 
+-- REORDERED TABS
 local AutoFarmTab   = Window:CreateTab("Auto Farming", 4483362458)
 local ProtectionTab = Window:CreateTab("Protection", 4483362458)
 local CombatTab     = Window:CreateTab("Combat", 4483362458)
@@ -631,50 +632,6 @@ AutoReconnectToggleObj = ProtectionTab:CreateToggle({
     end,
 })
 
-task.spawn(function()
-    local reconnecting = false
-    local function forceRejoin()
-        if reconnecting then return end
-        reconnecting = true
-        SendEmergencyPing("DISCONNECT - REJOINING", "Error detected. Aggressively re-routing to a new server.", tonumber(0xFFA500))
-        WriteHopState()
-        
-        task.spawn(function()
-            while task.wait(5) do
-                pcall(function() 
-                    TeleportService:Teleport(game.PlaceId, localPlayer) 
-                end)
-            end
-        end)
-    end
-
-    pcall(function()
-        GuiService.ErrorMessageChanged:Connect(function()
-            if Toggles.AutoReconnect then
-                local err = GuiService:GetErrorCode()
-                if err and err.Value ~= 0 then forceRejoin() end
-            end
-        end)
-    end)
-    
-    pcall(function()
-        CoreGui.RobloxPromptGui.promptOverlay.ChildAdded:Connect(function(child)
-            if Toggles.AutoReconnect and child.Name == "ErrorPrompt" then forceRejoin() end
-        end)
-    end)
-
-    pcall(function()
-        LogService.MessageOut:Connect(function(Message, Type)
-            if Toggles.AutoReconnect and Type == Enum.MessageType.MessageError then
-                local lowerMsg = string.lower(Message)
-                if string.find(lowerMsg, "disconnect") or string.find(lowerMsg, "kicked") then
-                    forceRejoin()
-                end
-            end
-        end)
-    end)
-end)
-
 local AntiLagToggleObj
 AntiLagToggleObj = ProtectionTab:CreateToggle({
     Name = "Anti Lag Server Hop",
@@ -754,6 +711,50 @@ FpsBoosterBtnObj = ProtectionTab:CreateButton({
         Rayfield:Notify({Title = "FPS Boosted", Content = "All heavy rendering systems disabled.", Duration = 3})
     end,
 })
+
+task.spawn(function()
+    local reconnecting = false
+    local function forceRejoin()
+        if reconnecting then return end
+        reconnecting = true
+        SendEmergencyPing("DISCONNECT - REJOINING", "Error detected. Aggressively re-routing to a new server.", tonumber(0xFFA500))
+        WriteHopState()
+        
+        task.spawn(function()
+            while task.wait(5) do
+                pcall(function() 
+                    TeleportService:Teleport(game.PlaceId, localPlayer) 
+                end)
+            end
+        end)
+    end
+
+    pcall(function()
+        GuiService.ErrorMessageChanged:Connect(function()
+            if Toggles.AutoReconnect then
+                local err = GuiService:GetErrorCode()
+                if err and err.Value ~= 0 then forceRejoin() end
+            end
+        end)
+    end)
+    
+    pcall(function()
+        CoreGui.RobloxPromptGui.promptOverlay.ChildAdded:Connect(function(child)
+            if Toggles.AutoReconnect and child.Name == "ErrorPrompt" then forceRejoin() end
+        end)
+    end)
+
+    pcall(function()
+        LogService.MessageOut:Connect(function(Message, Type)
+            if Toggles.AutoReconnect and Type == Enum.MessageType.MessageError then
+                local lowerMsg = string.lower(Message)
+                if string.find(lowerMsg, "disconnect") or string.find(lowerMsg, "kicked") then
+                    forceRejoin()
+                end
+            end
+        end)
+    end)
+end)
 
 ---------------------------------------------------------
 -- 3. COMBAT TAB 
@@ -1021,7 +1022,7 @@ CombatTab:CreateColorPicker({
 ---------------------------------------------------------
 -- 4. TROLL TAB
 ---------------------------------------------------------
-TrollTab:CreateSection("Local Cosmetics")
+TrollTab:CreateSection("Visuals Client Sided")
 
 local currentFakeRank = "None"
 local fakeRankGui = nil
@@ -1112,7 +1113,7 @@ TrollTab:CreateButton({
     end,
 })
 
-TrollTab:CreateSection("Targeted Harassment")
+TrollTab:CreateSection("Annoy Players")
 
 local orbitAngle = 0
 RunService.RenderStepped:Connect(function()
@@ -1142,6 +1143,7 @@ RunService.RenderStepped:Connect(function()
         local target = Players:FindFirstChild(trollTargetPlayer)
         local char = localPlayer.Character
         if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") and char and char:FindFirstChild("HumanoidRootPart") then
+            -- Extreme high-speed math.sin for the aggressive forward/backward motion
             local offsetZ = math.sin(tick() * 45) * 1.5
             char.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, offsetZ)
         end
@@ -1154,25 +1156,6 @@ TrollTab:CreateToggle({
     Flag = "BangToggle",
     Callback = function(Value)
         Toggles.BangPlayer = Value
-    end,
-})
-
-RunService.RenderStepped:Connect(function()
-    if Toggles.SitOnHead and trollTargetPlayer ~= "None" then
-        local target = Players:FindFirstChild(trollTargetPlayer)
-        local char = localPlayer.Character
-        if target and target.Character and target.Character:FindFirstChild("Head") and char and char:FindFirstChild("HumanoidRootPart") then
-            char.HumanoidRootPart.CFrame = target.Character.Head.CFrame * CFrame.new(0, 1.5, 0)
-        end
-    end
-end)
-
-TrollTab:CreateToggle({
-    Name = "Sit On Head",
-    CurrentValue = false,
-    Flag = "SitOnHeadToggle",
-    Callback = function(Value)
-        Toggles.SitOnHead = Value
     end,
 })
 
@@ -1195,7 +1178,28 @@ TrollTab:CreateToggle({
     end,
 })
 
-TrollTab:CreateSection("Server Wide Trolls")
+RunService.RenderStepped:Connect(function()
+    if Toggles.FlingTarget and trollTargetPlayer ~= "None" then
+        local target = Players:FindFirstChild(trollTargetPlayer)
+        local char = localPlayer.Character
+        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") and char and char:FindFirstChild("HumanoidRootPart") then
+            pcall(function()
+                target.Character.HumanoidRootPart.Velocity = Vector3.new(10000, 10000, 10000)
+            end)
+        end
+    end
+end)
+
+TrollTab:CreateToggle({
+    Name = "Fling Target",
+    CurrentValue = false,
+    Flag = "FlingToggle",
+    Callback = function(Value)
+        Toggles.FlingTarget = Value
+    end,
+})
+
+TrollTab:CreateSection("Server Annoyances")
 
 task.spawn(function()
     while task.wait(0.05) do
@@ -1281,25 +1285,6 @@ TrollTab:CreateToggle({
 })
 
 RunService.RenderStepped:Connect(function()
-    if Toggles.FloorCrawler then
-        local char = localPlayer.Character
-        if char and char:FindFirstChild("HumanoidRootPart") then
-            local hrp = char.HumanoidRootPart
-            hrp.CFrame = CFrame.new(hrp.Position) * CFrame.Angles(math.rad(90), 0, 0)
-        end
-    end
-end)
-
-TrollTab:CreateToggle({
-    Name = "Floor Crawler",
-    CurrentValue = false,
-    Flag = "FloorCrawlerToggle",
-    Callback = function(Value)
-        Toggles.FloorCrawler = Value
-    end,
-})
-
-RunService.RenderStepped:Connect(function()
     if Toggles.JitterWalk then
         local char = localPlayer.Character
         if char and char:FindFirstChild("HumanoidRootPart") then
@@ -1318,14 +1303,23 @@ TrollTab:CreateToggle({
     end,
 })
 
-task.spawn(function()
-    local list = {}
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= localPlayer then table.insert(list, plr.Name) end
-    end
-    if #list == 0 then table.insert(list, "None") end
-    TrollDropdown:Refresh(list, true)
-end)
+TrollTab:CreateToggle({
+    Name = "Giant Head Client Sided",
+    CurrentValue = false,
+    Flag = "GiantHeadToggle",
+    Callback = function(Value)
+        pcall(function()
+            local char = localPlayer.Character
+            if char and char:FindFirstChild("Head") then
+                if Value then
+                    char.Head.Size = Vector3.new(5, 5, 5)
+                else
+                    char.Head.Size = Vector3.new(1.2, 1.2, 1.2)
+                end
+            end
+        end)
+    end,
+})
 
 ---------------------------------------------------------
 -- 5. LEVEL ANALYTICS TAB
