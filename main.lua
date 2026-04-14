@@ -619,7 +619,7 @@ TeleportToggleObj = AutoFarmTab:CreateToggle({
 ---------------------------------------------------------
 -- 2. PROTECTION TAB
 ---------------------------------------------------------
-ProtectionTab:CreateSection("Network and Security")
+ProtectionTab:CreateSection("Network & Client Safety")
 
 local AutoReconnectToggleObj
 AutoReconnectToggleObj = ProtectionTab:CreateToggle({
@@ -1024,52 +1024,34 @@ local randomOrbitAngle = 0
 local trollTargetPlayer = "None"
 local randomOrbitTarget = nil
 
--- Size Cache to Reset Character
-local originalSelfSizes = {}
-local function cacheSelfSize(char)
-    if not char then return end
-    for _, part in ipairs(char:GetDescendants()) do
-        if part:IsA("BasePart") and not originalSelfSizes[part] then
-            originalSelfSizes[part] = part.Size
-        end
-    end
-end
-
-local function restoreSelfSize()
+local function updateCharacterSize()
     local char = localPlayer.Character
     if not char then return end
-    for part, size in pairs(originalSelfSizes) do
-        if part and part.Parent and part:IsDescendantOf(char) then
-            pcall(function() part.Size = size end)
+    
+    local hum = char:FindFirstChild("Humanoid")
+    if hum then
+        local scale = 1
+        if Toggles.GiantChar then
+            scale = 5
+        elseif Toggles.TinyChar then
+            scale = 0.25
         end
-    end
-end
-
-task.spawn(function()
-    while task.wait(0.1) do
-        if Toggles.GiantHead or Toggles.GiantChar or Toggles.TinyChar then
-            local char = localPlayer.Character
-            if char then
-                cacheSelfSize(char)
-                for _, part in ipairs(char:GetDescendants()) do
-                    if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-                        pcall(function()
-                            if Toggles.GiantHead and part.Name == "Head" then
-                                part.Size = Vector3.new(5, 5, 5)
-                            elseif part.Name ~= "Head" then
-                                if Toggles.GiantChar then
-                                    part.Size = originalSelfSizes[part] * 5
-                                elseif Toggles.TinyChar then
-                                    part.Size = originalSelfSizes[part] * 0.2
-                                end
-                            end
-                        end)
-                    end
-                end
+        
+        for _, name in ipairs({"BodyWidthScale", "BodyHeightScale", "BodyDepthScale"}) do
+            local val = hum:FindFirstChild(name)
+            if val then val.Value = scale end
+        end
+        
+        local headScale = hum:FindFirstChild("HeadScale")
+        if headScale then
+            if Toggles.GiantHead then
+                headScale.Value = scale * 4 
+            else
+                headScale.Value = scale
             end
         end
     end
-end)
+end
 
 RunService.RenderStepped:Connect(function()
     if rainbowVisuals then sharedVisualColor = Color3.fromHSV(os.clock() % 4 / 4, 1, 1) end
@@ -1101,7 +1083,8 @@ RunService.RenderStepped:Connect(function()
             end
             
             if Toggles.BangPlayer then
-                local offsetZ = math.sin(tick() * 20) * 5 
+                -- Slowed down speed (15) and extended back-and-forth reach (4 studs), properly centered
+                local offsetZ = 1.5 + (math.sin(tick() * 15) * 4) 
                 hrp.CFrame = targetHrp.CFrame * CFrame.new(0, 0, offsetZ)
             end
             
@@ -1174,6 +1157,7 @@ localPlayer.CharacterAdded:Connect(function(char)
     task.spawn(function()
         task.wait(2)
         applyFakeRank()
+        updateCharacterSize() -- Re-apply size if they die
     end)
 end)
 
@@ -1293,7 +1277,7 @@ TrollTab:CreateToggle({
     end,
 })
 
-TrollTab:CreateSection("Self Trolls (Client-Sided)")
+TrollTab:CreateSection("Self Trolls")
 
 TrollTab:CreateToggle({
     Name = "Enable Noclip (Client-Sided)",
@@ -1339,9 +1323,7 @@ TrollTab:CreateToggle({
     Flag = "GiantHeadToggle",
     Callback = function(Value)
         Toggles.GiantHead = Value
-        if not Value and not Toggles.GiantChar and not Toggles.TinyChar then
-            restoreSelfSize()
-        end
+        updateCharacterSize()
     end,
 })
 
@@ -1351,9 +1333,8 @@ TrollTab:CreateToggle({
     Flag = "GiantCharToggle",
     Callback = function(Value)
         Toggles.GiantChar = Value
-        if not Value and not Toggles.GiantHead and not Toggles.TinyChar then
-            restoreSelfSize()
-        end
+        if Value then Toggles.TinyChar = false end 
+        updateCharacterSize()
     end,
 })
 
@@ -1363,9 +1344,8 @@ TrollTab:CreateToggle({
     Flag = "TinyCharToggle",
     Callback = function(Value)
         Toggles.TinyChar = Value
-        if not Value and not Toggles.GiantHead and not Toggles.GiantChar then
-            restoreSelfSize()
-        end
+        if Value then Toggles.GiantChar = false end 
+        updateCharacterSize()
     end,
 })
 
@@ -1821,48 +1801,51 @@ task.spawn(function()
     end
 end)
 
-PlayerTab:CreateSection("Local Avatar Modifications (Client-Sided)")
+PlayerTab:CreateSection("Local Avatar Modifications")
 
 PlayerTab:CreateToggle({
-    Name = "Fake Korblox (Right Leg)",
+    Name = "Fake Korblox (Client-Sided)",
     CurrentValue = false,
     Flag = "FakeKorbloxToggle",
     Callback = function(Value)
         pcall(function()
             local char = localPlayer.Character
             if char then
-                local rightLeg = char:FindFirstChild("Right Leg") or char:FindFirstChild("RightLowerLeg")
-                if rightLeg then
+                local rightLowerLeg = char:FindFirstChild("RightLowerLeg")
+                local rightFoot = char:FindFirstChild("RightFoot")
+                local rightUpperLeg = char:FindFirstChild("RightUpperLeg")
+
+                if rightLowerLeg and rightFoot and rightUpperLeg then
                     if Value then
-                        -- Set to Korblox ID
-                        if char:FindFirstChild("Humanoid") and char.Humanoid.RigType == Enum.HumanoidRigType.R15 then
-                            -- R15 logic if needed, else simple hide for R6
-                            rightLeg.Transparency = 1
-                        else
-                            rightLeg.Transparency = 1
-                            local fakeLimb = Instance.new("Part")
-                            fakeLimb.Name = "FakeKorbloxLimb"
-                            fakeLimb.Size = Vector3.new(0.5, 1, 0.5)
-                            fakeLimb.CFrame = rightLeg.CFrame
-                            fakeLimb.CanCollide = false
-                            fakeLimb.Anchored = false
-                            fakeLimb.Transparency = 1
-                            
-                            local mesh = Instance.new("SpecialMesh")
-                            mesh.MeshId = "rbxassetid://139607718"
-                            mesh.Parent = fakeLimb
-                            
-                            local weld = Instance.new("WeldConstraint")
-                            weld.Part0 = rightLeg
-                            weld.Part1 = fakeLimb
-                            weld.Parent = fakeLimb
-                            
-                            fakeLimb.Parent = char
-                        end
+                        -- Hide original legs
+                        rightLowerLeg.Transparency = 1
+                        rightFoot.Transparency = 1
+                        
+                        -- Create true Korblox mesh
+                        local fake = Instance.new("Part")
+                        fake.Name = "FakeKorbloxMeshPart"
+                        fake.Size = Vector3.new(0.1, 0.1, 0.1)
+                        fake.Anchored = false
+                        fake.CanCollide = false
+                        fake.Transparency = 0
+                        fake.CFrame = rightUpperLeg.CFrame * CFrame.new(0, -0.6, 0)
+                        
+                        local mesh = Instance.new("SpecialMesh")
+                        mesh.MeshId = "rbxassetid://139607718"
+                        mesh.Scale = Vector3.new(1, 1, 1)
+                        mesh.Parent = fake
+                        
+                        local weld = Instance.new("WeldConstraint")
+                        weld.Part0 = rightUpperLeg
+                        weld.Part1 = fake
+                        weld.Parent = fake
+                        
+                        fake.Parent = char
                     else
-                        rightLeg.Transparency = 0
-                        local fakeLimb = char:FindFirstChild("FakeKorbloxLimb")
-                        if fakeLimb then fakeLimb:Destroy() end
+                        rightLowerLeg.Transparency = 0
+                        rightFoot.Transparency = 0
+                        local fake = char:FindFirstChild("FakeKorbloxMeshPart")
+                        if fake then fake:Destroy() end
                     end
                 end
             end
@@ -1871,7 +1854,7 @@ PlayerTab:CreateToggle({
 })
 
 PlayerTab:CreateToggle({
-    Name = "Fake Headless",
+    Name = "Fake Headless (Client-Sided)",
     CurrentValue = false,
     Flag = "FakeHeadlessToggle",
     Callback = function(Value)
@@ -1917,6 +1900,7 @@ MiscTab:CreateButton({
        ClearEsp()
        RestoreHitboxes()
        if fakeRankGui then pcall(function() fakeRankGui:Destroy() end) end
+       updateCharacterSize() -- restores size on delete
        
        if trackerGui then trackerGui:Destroy() end
        Rayfield:Destroy()
