@@ -1774,6 +1774,7 @@ PlayerTab:CreateToggle({
                         fake.CFrame = rightUpperLeg.CFrame * CFrame.new(0, -0.2, 0)
                         
                         local mesh = fake:FindFirstChildOfClass("SpecialMesh") or Instance.new("SpecialMesh")
+                        mesh.MeshType = Enum.MeshType.FileMesh 
                         mesh.MeshId = "rbxassetid://139607718"
                         mesh.Scale = Vector3.new(1, 1, 1)
                         mesh.Parent = fake
