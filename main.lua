@@ -1015,82 +1015,12 @@ CombatTab:CreateColorPicker({
 })
 
 ---------------------------------------------------------
--- 4. TROLL TAB (Master Optimization Engine)
+-- 4. TROLL TAB (Master Engine)
 ---------------------------------------------------------
-
--- GLOBAL RENDER STEPPED ENGINE (Improves FPS)
 local orbitAngle = 0
 local randomOrbitAngle = 0
 local trollTargetPlayer = "None"
 local randomOrbitTarget = nil
-
-RunService.Stepped:Connect(function()
-    if Toggles.Noclip then
-        local char = localPlayer.Character
-        if char then
-            for _, part in ipairs(char:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = false
-                end
-            end
-            local hum = char:FindFirstChildOfClass("Humanoid")
-            if hum then
-                hum:ChangeState(11)
-            end
-        end
-    end
-end)
-
-RunService.RenderStepped:Connect(function()
-    if rainbowVisuals then sharedVisualColor = Color3.fromHSV(os.clock() % 4 / 4, 1, 1) end
-    
-    local char = localPlayer.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    
-    if hrp then
-        if Toggles.SeizureSpin then
-            hrp.CFrame = hrp.CFrame * CFrame.Angles(math.rad(math.random(1, 360)), math.rad(math.random(1, 360)), math.rad(math.random(1, 360)))
-        end
-        
-        if Toggles.JitterWalk then
-            hrp.CFrame = hrp.CFrame * CFrame.new(math.random(-1, 1) * 0.5, 0, math.random(-1, 1) * 0.5)
-        end
-    end
-
-    if trollTargetPlayer and trollTargetPlayer ~= "None" then
-        local target = Players:FindFirstChild(trollTargetPlayer)
-        local targetChar = target and target.Character
-        local targetHrp = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
-
-        if targetHrp and hrp then
-            if Toggles.UFOOrbit then
-                orbitAngle = orbitAngle + 0.4
-                local radius = 5
-                local offset = Vector3.new(math.cos(orbitAngle) * radius, 0, math.sin(orbitAngle) * radius)
-                hrp.CFrame = CFrame.lookAt(targetHrp.Position + offset, targetHrp.Position)
-            end
-            
-            if Toggles.BangPlayer then
-                local offsetZ = 1.5 + (math.sin(tick() * 15) * 4) 
-                hrp.CFrame = targetHrp.CFrame * CFrame.new(0, 0, offsetZ)
-            end
-            
-            if Toggles.FollowBehind then
-                hrp.CFrame = targetHrp.CFrame * CFrame.new(0, 0, 3)
-            end
-        end
-    end
-
-    if Toggles.OrbitRandom and randomOrbitTarget then
-        local randHrp = randomOrbitTarget.Character and randomOrbitTarget.Character:FindFirstChild("HumanoidRootPart")
-        if randHrp and hrp then
-            randomOrbitAngle = randomOrbitAngle + 0.4
-            local radius = 5
-            local offset = Vector3.new(math.cos(randomOrbitAngle) * radius, 0, math.sin(randomOrbitAngle) * radius)
-            hrp.CFrame = CFrame.lookAt(randHrp.Position + offset, randHrp.Position)
-        end
-    end
-end)
 
 TrollTab:CreateSection("Fake Badges (Client-Sided)")
 
@@ -1144,6 +1074,22 @@ localPlayer.CharacterAdded:Connect(function(char)
     task.spawn(function()
         task.wait(2)
         applyFakeRank()
+        if Toggles.GiantChar or Toggles.TinyChar or Toggles.GiantHead then
+            local hum = char:WaitForChild("Humanoid", 5)
+            if hum then
+                local scale = 1
+                if Toggles.GiantChar then scale = 3
+                elseif Toggles.TinyChar then scale = 0.4 end
+                for _, name in ipairs({"BodyWidthScale", "BodyHeightScale", "BodyDepthScale"}) do
+                    local val = hum:FindFirstChild(name) or Instance.new("NumberValue", hum)
+                    val.Name = name
+                    val.Value = scale
+                end
+                local headScale = hum:FindFirstChild("HeadScale") or Instance.new("NumberValue", hum)
+                headScale.Name = "HeadScale"
+                headScale.Value = Toggles.GiantHead and (scale * 4) or scale
+            end
+        end
     end)
 end)
 
@@ -1238,8 +1184,6 @@ TrollTab:CreateToggle({
     end,
 })
 
-local randomOrbitTarget = nil
-local randomOrbitAngle = 0
 task.spawn(function()
     while task.wait(3) do
         if Toggles.OrbitRandom then
@@ -1292,6 +1236,82 @@ TrollTab:CreateToggle({
     end,
 })
 
+TrollTab:CreateToggle({
+    Name = "Giant Head (Client-Sided)",
+    CurrentValue = false,
+    Flag = "GiantHeadToggle",
+    Callback = function(Value)
+        Toggles.GiantHead = Value
+        pcall(function()
+            local char = localPlayer.Character
+            if char then
+                local hum = char:FindFirstChild("Humanoid")
+                if hum then
+                    local scale = 1
+                    if Toggles.GiantChar then scale = 3 elseif Toggles.TinyChar then scale = 0.4 end
+                    local headScale = hum:FindFirstChild("HeadScale") or Instance.new("NumberValue", hum)
+                    headScale.Name = "HeadScale"
+                    headScale.Value = Value and (scale * 4) or scale
+                end
+            end
+        end)
+    end,
+})
+
+TrollTab:CreateToggle({
+    Name = "Giant Character (Client-Sided)",
+    CurrentValue = false,
+    Flag = "GiantCharToggle",
+    Callback = function(Value)
+        Toggles.GiantChar = Value
+        if Value then Toggles.TinyChar = false end 
+        pcall(function()
+            local char = localPlayer.Character
+            if char then
+                local hum = char:FindFirstChild("Humanoid")
+                if hum then
+                    local scale = Value and 3 or (Toggles.TinyChar and 0.4 or 1)
+                    for _, name in ipairs({"BodyWidthScale", "BodyHeightScale", "BodyDepthScale"}) do
+                        local val = hum:FindFirstChild(name) or Instance.new("NumberValue", hum)
+                        val.Name = name
+                        val.Value = scale
+                    end
+                    local headScale = hum:FindFirstChild("HeadScale") or Instance.new("NumberValue", hum)
+                    headScale.Name = "HeadScale"
+                    headScale.Value = Toggles.GiantHead and (scale * 4) or scale
+                end
+            end
+        end)
+    end,
+})
+
+TrollTab:CreateToggle({
+    Name = "Tiny Character (Client-Sided)",
+    CurrentValue = false,
+    Flag = "TinyCharToggle",
+    Callback = function(Value)
+        Toggles.TinyChar = Value
+        if Value then Toggles.GiantChar = false end 
+        pcall(function()
+            local char = localPlayer.Character
+            if char then
+                local hum = char:FindFirstChild("Humanoid")
+                if hum then
+                    local scale = Value and 0.4 or (Toggles.GiantChar and 3 or 1)
+                    for _, name in ipairs({"BodyWidthScale", "BodyHeightScale", "BodyDepthScale"}) do
+                        local val = hum:FindFirstChild(name) or Instance.new("NumberValue", hum)
+                        val.Name = name
+                        val.Value = scale
+                    end
+                    local headScale = hum:FindFirstChild("HeadScale") or Instance.new("NumberValue", hum)
+                    headScale.Name = "HeadScale"
+                    headScale.Value = Toggles.GiantHead and (scale * 4) or scale
+                end
+            end
+        end)
+    end,
+})
+
 task.spawn(function()
     local list = {}
     for _, plr in ipairs(Players:GetPlayers()) do
@@ -1299,6 +1319,71 @@ task.spawn(function()
     end
     if #list == 0 then table.insert(list, "None") end
     TrollDropdown:Refresh(list, true)
+end)
+
+-- CORE TROLL LOOP (Consolidated logic for performance)
+RunService.Stepped:Connect(function()
+    if Toggles.Noclip then
+        local char = localPlayer.Character
+        if char then
+            for _, part in ipairs(char:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                end
+            end
+        end
+    end
+end)
+
+RunService.RenderStepped:Connect(function()
+    if rainbowVisuals then sharedVisualColor = Color3.fromHSV(os.clock() % 4 / 4, 1, 1) end
+    
+    local char = localPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    
+    if hrp then
+        if Toggles.SeizureSpin then
+            hrp.CFrame = hrp.CFrame * CFrame.Angles(math.rad(math.random(1, 360)), math.rad(math.random(1, 360)), math.rad(math.random(1, 360)))
+        end
+        
+        if Toggles.JitterWalk then
+            hrp.CFrame = hrp.CFrame * CFrame.new(math.random(-1, 1) * 0.5, 0, math.random(-1, 1) * 0.5)
+        end
+    end
+
+    if trollTargetPlayer and trollTargetPlayer ~= "None" then
+        local target = Players:FindFirstChild(trollTargetPlayer)
+        local targetChar = target and target.Character
+        local targetHrp = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
+
+        if targetHrp and hrp then
+            if Toggles.UFOOrbit then
+                orbitAngle = orbitAngle + 0.4
+                local radius = 5
+                local offset = Vector3.new(math.cos(orbitAngle) * radius, 0, math.sin(orbitAngle) * radius)
+                hrp.CFrame = CFrame.lookAt(targetHrp.Position + offset, targetHrp.Position)
+            end
+            
+            if Toggles.BangPlayer then
+                local offsetZ = 1.5 + (math.sin(tick() * 15) * 4) 
+                hrp.CFrame = targetHrp.CFrame * CFrame.new(0, 0, offsetZ)
+            end
+            
+            if Toggles.FollowBehind then
+                hrp.CFrame = targetHrp.CFrame * CFrame.new(0, 0, 3)
+            end
+        end
+    end
+
+    if Toggles.OrbitRandom and randomOrbitTarget then
+        local randHrp = randomOrbitTarget.Character and randomOrbitTarget.Character:FindFirstChild("HumanoidRootPart")
+        if randHrp and hrp then
+            randomOrbitAngle = randomOrbitAngle + 0.4
+            local radius = 5
+            local offset = Vector3.new(math.cos(randomOrbitAngle) * radius, 0, math.sin(randomOrbitAngle) * radius)
+            hrp.CFrame = CFrame.lookAt(randHrp.Position + offset, randHrp.Position)
+        end
+    end
 end)
 
 ---------------------------------------------------------
@@ -1744,7 +1829,7 @@ task.spawn(function()
     end
 end)
 
-PlayerTab:CreateSection("Avatar Modifications")
+PlayerTab:CreateSection("Avatar Modifications (Client-Sided)")
 
 PlayerTab:CreateToggle({
     Name = "Fake Korblox",
@@ -1760,10 +1845,12 @@ PlayerTab:CreateToggle({
 
                 if rightUpperLeg then
                     if Value then
+                        -- Properly hide all segments of the R15 right leg
                         if rightLowerLeg then rightLowerLeg.Transparency = 1 end
                         if rightFoot then rightFoot.Transparency = 1 end
                         rightUpperLeg.Transparency = 1
                         
+                        -- Generate the Fake Korblox Limb
                         local fake = char:FindFirstChild("FakeKorbloxMeshPart") or Instance.new("Part")
                         fake.Name = "FakeKorbloxMeshPart"
                         fake.Size = Vector3.new(0.5, 1, 0.5)
@@ -1799,7 +1886,7 @@ PlayerTab:CreateToggle({
 })
 
 PlayerTab:CreateToggle({
-    Name = "Fake Headless (Client-Sided)",
+    Name = "Fake Headless",
     CurrentValue = false,
     Flag = "FakeHeadlessToggle",
     Callback = function(Value)
@@ -1845,6 +1932,19 @@ MiscTab:CreateButton({
        ClearEsp()
        RestoreHitboxes()
        if fakeRankGui then pcall(function() fakeRankGui:Destroy() end) end
+       
+       pcall(function()
+           local char = localPlayer.Character
+           if char then
+               local hum = char:FindFirstChild("Humanoid")
+               if hum then
+                   for _, name in ipairs({"BodyWidthScale", "BodyHeightScale", "BodyDepthScale", "HeadScale"}) do
+                       local val = hum:FindFirstChild(name)
+                       if val then val.Value = 1 end
+                   end
+               end
+           end
+       end)
        
        if trackerGui then trackerGui:Destroy() end
        Rayfield:Destroy()
