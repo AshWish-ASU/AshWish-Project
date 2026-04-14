@@ -1032,26 +1032,51 @@ local function updateCharacterSize()
     if hum then
         local scale = 1
         if Toggles.GiantChar then
-            scale = 5
+            scale = 3 -- Safely maxed out to prevent clipping into the floor
         elseif Toggles.TinyChar then
-            scale = 0.2
+            scale = 0.4 -- Safely minimized to prevent physics breaks
         end
         
-        for _, name in ipairs({"BodyWidthScale", "BodyHeightScale", "BodyDepthScale"}) do
-            local val = hum:FindFirstChild(name)
-            if val then val.Value = scale end
+        local props = {"BodyWidthScale", "BodyHeightScale", "BodyDepthScale"}
+        for _, propName in ipairs(props) do
+            local val = hum:FindFirstChild(propName)
+            if not val then
+                val = Instance.new("NumberValue")
+                val.Name = propName
+                val.Value = 1
+                val.Parent = hum
+            end
+            val.Value = scale
         end
         
         local headScale = hum:FindFirstChild("HeadScale")
-        if headScale then
-            if Toggles.GiantHead then
-                headScale.Value = scale * 4 
-            else
-                headScale.Value = scale
-            end
+        if not headScale then
+            headScale = Instance.new("NumberValue")
+            headScale.Name = "HeadScale"
+            headScale.Value = 1
+            headScale.Parent = hum
+        end
+        
+        if Toggles.GiantHead then
+            headScale.Value = scale * 4 
+        else
+            headScale.Value = scale
         end
     end
 end
+
+RunService.Stepped:Connect(function()
+    if Toggles.Noclip then
+        local char = localPlayer.Character
+        if char then
+            for _, part in ipairs(char:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                end
+            end
+        end
+    end
+end)
 
 RunService.RenderStepped:Connect(function()
     if rainbowVisuals then sharedVisualColor = Color3.fromHSV(os.clock() % 4 / 4, 1, 1) end
@@ -1066,14 +1091,6 @@ RunService.RenderStepped:Connect(function()
         
         if Toggles.JitterWalk then
             hrp.CFrame = hrp.CFrame * CFrame.new(math.random(-1, 1) * 0.5, 0, math.random(-1, 1) * 0.5)
-        end
-        
-        if Toggles.Noclip then
-            for _, part in ipairs(char:GetDescendants()) do
-                if part:IsA("BasePart") and part.CanCollide then
-                    part.CanCollide = false
-                end
-            end
         end
     end
 
@@ -1091,7 +1108,8 @@ RunService.RenderStepped:Connect(function()
             end
             
             if Toggles.BangPlayer then
-                local offsetZ = 1.5 + (math.sin(tick() * 20) * 5) 
+                -- Slower rhythm (15) but a massive 5.5 stud aggressive lunge
+                local offsetZ = 1.5 + (math.sin(tick() * 15) * 4) 
                 hrp.CFrame = targetHrp.CFrame * CFrame.new(0, 0, offsetZ)
             end
             
@@ -1111,74 +1129,6 @@ RunService.RenderStepped:Connect(function()
         end
     end
 end)
-
-TrollTab:CreateSection("Fake Badges (Client-Sided)")
-
-local currentFakeRank = "None"
-local fakeRankGui = nil
-
-local rankImages = {
-    ["Rank 1-10 Badge"] = "rbxassetid://13321938624",
-    ["Rank 11-30 Badge"] = "rbxassetid://13321938398",
-    ["Rank 31-70 Badge"] = "rbxassetid://13321938232",
-    ["Rank 71-100 Badge"] = "rbxassetid://13321938751"
-}
-
-local function applyFakeRank()
-    task.spawn(function()
-        pcall(function()
-            if currentFakeRank == "None" then
-                if fakeRankGui then fakeRankGui:Destroy() end
-                return
-            end
-
-            local char = localPlayer.Character
-            if not char then return end
-            
-            local head = char:WaitForChild("Head", 5)
-            if not head then return end
-
-            if fakeRankGui then fakeRankGui:Destroy() end
-
-            fakeRankGui = Instance.new("BillboardGui")
-            fakeRankGui.Name = "FakeRankBadge"
-            fakeRankGui.Adornee = head
-            fakeRankGui.Size = UDim2.new(3, 0, 3, 0)
-            fakeRankGui.StudsOffset = Vector3.new(0, 4, 0)
-            fakeRankGui.AlwaysOnTop = true
-            fakeRankGui.MaxDistance = 250
-
-            local img = Instance.new("ImageLabel")
-            img.Parent = fakeRankGui
-            img.Size = UDim2.new(1, 0, 1, 0)
-            img.BackgroundTransparency = 1
-            img.Image = rankImages[currentFakeRank] or ""
-            img.ScaleType = Enum.ScaleType.Fit 
-
-            fakeRankGui.Parent = head
-        end)
-    end)
-end
-
-localPlayer.CharacterAdded:Connect(function(char)
-    task.spawn(function()
-        task.wait(2)
-        applyFakeRank()
-        updateCharacterSize() 
-    end)
-end)
-
-TrollTab:CreateDropdown({
-    Name = "Fake Leaderboard Badge",
-    Options = {"None", "Rank 1-10 Badge", "Rank 11-30 Badge", "Rank 31-70 Badge", "Rank 71-100 Badge"},
-    CurrentOption = {"None"},
-    MultipleOptions = false,
-    Flag = "FakeRankBadgeDropdown",
-    Callback = function(Option)
-        currentFakeRank = Option[1]
-        applyFakeRank()
-    end,
-})
 
 TrollTab:CreateSection("Target Selection")
 
@@ -1287,15 +1237,6 @@ TrollTab:CreateToggle({
 TrollTab:CreateSection("Self Trolls")
 
 TrollTab:CreateToggle({
-    Name = "Enable Noclip (Client-Sided)",
-    CurrentValue = false,
-    Flag = "NoclipToggle",
-    Callback = function(Value)
-        Toggles.Noclip = Value
-    end,
-})
-
-TrollTab:CreateToggle({
     Name = "Fast Spin",
     CurrentValue = false,
     Flag = "SeizureSpinToggle",
@@ -1310,6 +1251,15 @@ TrollTab:CreateToggle({
     Flag = "JitterWalkToggle",
     Callback = function(Value)
         Toggles.JitterWalk = Value
+    end,
+})
+
+TrollTab:CreateToggle({
+    Name = "Enable Noclip (Client-Sided)",
+    CurrentValue = false,
+    Flag = "NoclipToggle",
+    Callback = function(Value)
+        Toggles.Noclip = Value
     end,
 })
 
@@ -1342,6 +1292,71 @@ TrollTab:CreateToggle({
         Toggles.TinyChar = Value
         if Value then Toggles.GiantChar = false end 
         updateCharacterSize()
+    end,
+})
+
+local currentFakeRank = "None"
+local fakeRankGui = nil
+local rankImages = {
+    ["Rank 1-10 Badge"] = "rbxassetid://13321938624",
+    ["Rank 11-30 Badge"] = "rbxassetid://13321938398",
+    ["Rank 31-70 Badge"] = "rbxassetid://13321938232",
+    ["Rank 71-100 Badge"] = "rbxassetid://13321938751"
+}
+
+local function applyFakeRank()
+    task.spawn(function()
+        pcall(function()
+            if currentFakeRank == "None" then
+                if fakeRankGui then fakeRankGui:Destroy() end
+                return
+            end
+
+            local char = localPlayer.Character
+            if not char then return end
+            
+            local head = char:WaitForChild("Head", 5)
+            if not head then return end
+
+            if fakeRankGui then fakeRankGui:Destroy() end
+
+            fakeRankGui = Instance.new("BillboardGui")
+            fakeRankGui.Name = "FakeRankBadge"
+            fakeRankGui.Adornee = head
+            fakeRankGui.Size = UDim2.new(3, 0, 3, 0)
+            fakeRankGui.StudsOffset = Vector3.new(0, 4, 0)
+            fakeRankGui.AlwaysOnTop = true
+            fakeRankGui.MaxDistance = 250
+
+            local img = Instance.new("ImageLabel")
+            img.Parent = fakeRankGui
+            img.Size = UDim2.new(1, 0, 1, 0)
+            img.BackgroundTransparency = 1
+            img.Image = rankImages[currentFakeRank] or ""
+            img.ScaleType = Enum.ScaleType.Fit 
+
+            fakeRankGui.Parent = head
+        end)
+    end)
+end
+
+localPlayer.CharacterAdded:Connect(function(char)
+    task.spawn(function()
+        task.wait(2)
+        applyFakeRank()
+        updateCharacterSize() 
+    end)
+end)
+
+TrollTab:CreateDropdown({
+    Name = "Fake Leaderboard Badge (Client-Sided)",
+    Options = {"None", "Rank 1-10 Badge", "Rank 11-30 Badge", "Rank 31-70 Badge", "Rank 71-100 Badge"},
+    CurrentOption = {"None"},
+    MultipleOptions = false,
+    Flag = "FakeRankBadgeDropdown",
+    Callback = function(Option)
+        currentFakeRank = Option[1]
+        applyFakeRank()
     end,
 })
 
@@ -1811,33 +1826,35 @@ PlayerTab:CreateToggle({
                 local rightFoot = char:FindFirstChild("RightFoot")
                 local rightUpperLeg = char:FindFirstChild("RightUpperLeg")
 
-                if rightLowerLeg and rightFoot and rightUpperLeg then
+                if rightUpperLeg then
                     if Value then
-                        rightLowerLeg.Transparency = 1
-                        rightFoot.Transparency = 1
+                        if rightLowerLeg then rightLowerLeg.Transparency = 1 end
+                        if rightFoot then rightFoot.Transparency = 1 end
+                        rightUpperLeg.Transparency = 1
                         
-                        local fake = Instance.new("Part")
+                        local fake = char:FindFirstChild("FakeKorbloxMeshPart") or Instance.new("Part")
                         fake.Name = "FakeKorbloxMeshPart"
                         fake.Size = Vector3.new(0.1, 0.1, 0.1)
                         fake.Anchored = false
                         fake.CanCollide = false
                         fake.Transparency = 0
-                        fake.CFrame = rightUpperLeg.CFrame * CFrame.new(0, -0.6, 0)
+                        fake.CFrame = rightUpperLeg.CFrame * CFrame.new(0, -0.2, 0)
                         
-                        local mesh = Instance.new("SpecialMesh")
+                        local mesh = fake:FindFirstChildOfClass("SpecialMesh") or Instance.new("SpecialMesh")
                         mesh.MeshId = "rbxassetid://139607718"
                         mesh.Scale = Vector3.new(1, 1, 1)
                         mesh.Parent = fake
                         
-                        local weld = Instance.new("WeldConstraint")
+                        local weld = fake:FindFirstChildOfClass("WeldConstraint") or Instance.new("WeldConstraint")
                         weld.Part0 = rightUpperLeg
                         weld.Part1 = fake
                         weld.Parent = fake
                         
                         fake.Parent = char
                     else
-                        rightLowerLeg.Transparency = 0
-                        rightFoot.Transparency = 0
+                        if rightLowerLeg then rightLowerLeg.Transparency = 0 end
+                        if rightFoot then rightFoot.Transparency = 0 end
+                        rightUpperLeg.Transparency = 0
                         local fake = char:FindFirstChild("FakeKorbloxMeshPart")
                         if fake then fake:Destroy() end
                     end
