@@ -1034,7 +1034,7 @@ local function updateCharacterSize()
         if Toggles.GiantChar then
             scale = 5
         elseif Toggles.TinyChar then
-            scale = 0.25
+            scale = 0.2
         end
         
         for _, name in ipairs({"BodyWidthScale", "BodyHeightScale", "BodyDepthScale"}) do
@@ -1067,6 +1067,14 @@ RunService.RenderStepped:Connect(function()
         if Toggles.JitterWalk then
             hrp.CFrame = hrp.CFrame * CFrame.new(math.random(-1, 1) * 0.5, 0, math.random(-1, 1) * 0.5)
         end
+        
+        if Toggles.Noclip then
+            for _, part in ipairs(char:GetDescendants()) do
+                if part:IsA("BasePart") and part.CanCollide then
+                    part.CanCollide = false
+                end
+            end
+        end
     end
 
     if trollTargetPlayer and trollTargetPlayer ~= "None" then
@@ -1083,8 +1091,7 @@ RunService.RenderStepped:Connect(function()
             end
             
             if Toggles.BangPlayer then
-                -- Slowed down speed (15) and extended back-and-forth reach (4 studs), properly centered
-                local offsetZ = 1.5 + (math.sin(tick() * 15) * 4) 
+                local offsetZ = 1.5 + (math.sin(tick() * 20) * 5) 
                 hrp.CFrame = targetHrp.CFrame * CFrame.new(0, 0, offsetZ)
             end
             
@@ -1157,7 +1164,7 @@ localPlayer.CharacterAdded:Connect(function(char)
     task.spawn(function()
         task.wait(2)
         applyFakeRank()
-        updateCharacterSize() -- Re-apply size if they die
+        updateCharacterSize() 
     end)
 end)
 
@@ -1284,20 +1291,9 @@ TrollTab:CreateToggle({
     CurrentValue = false,
     Flag = "NoclipToggle",
     Callback = function(Value)
-        isNoclipping = Value
+        Toggles.Noclip = Value
     end,
 })
-
-RunService.Stepped:Connect(function()
-    local char = localPlayer.Character
-    if char and isNoclipping then
-        for _, part in pairs(char:GetDescendants()) do
-            if part:IsA("BasePart") and part.CanCollide then
-                part.CanCollide = false
-            end
-        end
-    end
-end)
 
 TrollTab:CreateToggle({
     Name = "Fast Spin",
@@ -1801,7 +1797,7 @@ task.spawn(function()
     end
 end)
 
-PlayerTab:CreateSection("Local Avatar Modifications")
+PlayerTab:CreateSection("Avatar Modifications")
 
 PlayerTab:CreateToggle({
     Name = "Fake Korblox (Client-Sided)",
@@ -1817,11 +1813,9 @@ PlayerTab:CreateToggle({
 
                 if rightLowerLeg and rightFoot and rightUpperLeg then
                     if Value then
-                        -- Hide original legs
                         rightLowerLeg.Transparency = 1
                         rightFoot.Transparency = 1
                         
-                        -- Create true Korblox mesh
                         local fake = Instance.new("Part")
                         fake.Name = "FakeKorbloxMeshPart"
                         fake.Size = Vector3.new(0.1, 0.1, 0.1)
@@ -1900,7 +1894,19 @@ MiscTab:CreateButton({
        ClearEsp()
        RestoreHitboxes()
        if fakeRankGui then pcall(function() fakeRankGui:Destroy() end) end
-       updateCharacterSize() -- restores size on delete
+       
+       pcall(function()
+           local char = localPlayer.Character
+           if char then
+               local hum = char:FindFirstChild("Humanoid")
+               if hum then
+                   for _, name in ipairs({"BodyWidthScale", "BodyHeightScale", "BodyDepthScale", "HeadScale"}) do
+                       local val = hum:FindFirstChild(name)
+                       if val then val.Value = 1 end
+                   end
+               end
+           end
+       end)
        
        if trackerGui then trackerGui:Destroy() end
        Rayfield:Destroy()
