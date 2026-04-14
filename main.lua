@@ -1017,78 +1017,6 @@ CombatTab:CreateColorPicker({
 ---------------------------------------------------------
 -- 4. TROLL TAB (Master Engine)
 ---------------------------------------------------------
-local orbitAngle = 0
-local randomOrbitAngle = 0
-local trollTargetPlayer = "None"
-local randomOrbitTarget = nil
-
-RunService.Stepped:Connect(function()
-    if Toggles.Noclip then
-        local char = localPlayer.Character
-        if char then
-            for _, part in ipairs(char:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = false
-                end
-            end
-            local hum = char:FindFirstChildOfClass("Humanoid")
-            if hum then
-                hum:ChangeState(11)
-            end
-        end
-    end
-end)
-
-RunService.RenderStepped:Connect(function()
-    if rainbowVisuals then sharedVisualColor = Color3.fromHSV(os.clock() % 4 / 4, 1, 1) end
-    
-    local char = localPlayer.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    
-    if hrp then
-        if Toggles.SeizureSpin then
-            hrp.CFrame = hrp.CFrame * CFrame.Angles(math.rad(math.random(1, 360)), math.rad(math.random(1, 360)), math.rad(math.random(1, 360)))
-        end
-        
-        if Toggles.JitterWalk then
-            hrp.CFrame = hrp.CFrame * CFrame.new(math.random(-1, 1) * 0.5, 0, math.random(-1, 1) * 0.5)
-        end
-    end
-
-    if trollTargetPlayer and trollTargetPlayer ~= "None" then
-        local target = Players:FindFirstChild(trollTargetPlayer)
-        local targetChar = target and target.Character
-        local targetHrp = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
-
-        if targetHrp and hrp then
-            if Toggles.UFOOrbit then
-                orbitAngle = orbitAngle + 0.4
-                local radius = 5
-                local offset = Vector3.new(math.cos(orbitAngle) * radius, 0, math.sin(orbitAngle) * radius)
-                hrp.CFrame = CFrame.lookAt(targetHrp.Position + offset, targetHrp.Position)
-            end
-            
-            if Toggles.BangPlayer then
-                local offsetZ = 1.5 + (math.sin(tick() * 15) * 4) 
-                hrp.CFrame = targetHrp.CFrame * CFrame.new(0, 0, offsetZ)
-            end
-            
-            if Toggles.FollowBehind then
-                hrp.CFrame = targetHrp.CFrame * CFrame.new(0, 0, 3)
-            end
-        end
-    end
-
-    if Toggles.OrbitRandom and randomOrbitTarget then
-        local randHrp = randomOrbitTarget.Character and randomOrbitTarget.Character:FindFirstChild("HumanoidRootPart")
-        if randHrp and hrp then
-            randomOrbitAngle = randomOrbitAngle + 0.4
-            local radius = 5
-            local offset = Vector3.new(math.cos(randomOrbitAngle) * radius, 0, math.sin(randomOrbitAngle) * radius)
-            hrp.CFrame = CFrame.lookAt(randHrp.Position + offset, randHrp.Position)
-        end
-    end
-end)
 
 TrollTab:CreateSection("Fake Badges (Client-Sided)")
 
@@ -1159,6 +1087,7 @@ TrollTab:CreateDropdown({
 
 TrollTab:CreateSection("Target Selection")
 
+local trollTargetPlayer = "None"
 local TrollDropdown = TrollTab:CreateDropdown({
     Name = "Select Target",
     Options = {"None"},
@@ -1289,6 +1218,76 @@ TrollTab:CreateToggle({
         Toggles.Noclip = Value
     end,
 })
+
+local orbitAngle = 0
+
+RunService.Stepped:Connect(function()
+    if Toggles.Noclip then
+        local char = localPlayer.Character
+        if char then
+            for _, part in ipairs(char:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                end
+            end
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            if hum then
+                hum:ChangeState(11)
+            end
+        end
+    end
+end)
+
+RunService.RenderStepped:Connect(function()
+    if rainbowVisuals then sharedVisualColor = Color3.fromHSV(os.clock() % 4 / 4, 1, 1) end
+    
+    local char = localPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    
+    if hrp then
+        if Toggles.SeizureSpin then
+            hrp.CFrame = hrp.CFrame * CFrame.Angles(math.rad(math.random(1, 360)), math.rad(math.random(1, 360)), math.rad(math.random(1, 360)))
+        end
+        
+        if Toggles.JitterWalk then
+            hrp.CFrame = hrp.CFrame * CFrame.new(math.random(-1, 1) * 0.5, 0, math.random(-1, 1) * 0.5)
+        end
+    end
+
+    if trollTargetPlayer and trollTargetPlayer ~= "None" then
+        local target = Players:FindFirstChild(trollTargetPlayer)
+        local targetChar = target and target.Character
+        local targetHrp = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
+
+        if targetHrp and hrp then
+            if Toggles.UFOOrbit then
+                orbitAngle = orbitAngle + 0.4
+                local radius = 5
+                local offset = Vector3.new(math.cos(orbitAngle) * radius, 0, math.sin(orbitAngle) * radius)
+                hrp.CFrame = CFrame.lookAt(targetHrp.Position + offset, targetHrp.Position)
+            end
+            
+            if Toggles.BangPlayer then
+                local offsetZ = 1.5 + (math.sin(tick() * 15) * 4) 
+                hrp.CFrame = targetHrp.CFrame * CFrame.new(0, 0, offsetZ)
+            end
+            
+            if Toggles.FollowBehind then
+                hrp.CFrame = targetHrp.CFrame * CFrame.new(0, 0, 3)
+            end
+        end
+    end
+
+    if Toggles.OrbitRandom and randomOrbitTarget then
+        local randHrp = randomOrbitTarget.Character and randomOrbitTarget.Character:FindFirstChild("HumanoidRootPart")
+        if randHrp and hrp then
+            randomOrbitAngle = randomOrbitAngle + 0.4
+            local radius = 5
+            local offset = Vector3.new(math.cos(randomOrbitAngle) * radius, 0, math.sin(randomOrbitAngle) * radius)
+            hrp.CFrame = CFrame.lookAt(randHrp.Position + offset, randHrp.Position)
+        end
+    end
+end)
 
 task.spawn(function()
     local list = {}
@@ -1742,7 +1741,7 @@ task.spawn(function()
     end
 end)
 
-PlayerTab:CreateSection("Avatar Modifications (Client-Sided)")
+PlayerTab:CreateSection("Avatar Modifications")
 
 PlayerTab:CreateToggle({
     Name = "Fake Korblox",
@@ -1758,41 +1757,37 @@ PlayerTab:CreateToggle({
 
                 if rightUpperLeg then
                     if Value then
-                        -- Properly hide all segments of the R15 right leg
                         if rightLowerLeg then rightLowerLeg.Transparency = 1 end
                         if rightFoot then rightFoot.Transparency = 1 end
                         rightUpperLeg.Transparency = 1
                         
-                        -- Generate the Fake Korblox Limb
-                        local fake = char:FindFirstChild("FakeKorbloxMeshPart")
-                        if not fake then
-                            fake = Instance.new("Part")
-                            fake.Name = "FakeKorbloxMeshPart"
-                            fake.Size = Vector3.new(0.5, 1, 0.5)
-                            fake.Anchored = false
-                            fake.CanCollide = false
-                            fake.Massless = true
-                            fake.Transparency = 0
-                            
-                            local torso = char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso")
-                            if torso then
-                                fake.Color = torso.Color
-                            end
-                            
-                            local mesh = Instance.new("SpecialMesh")
-                            mesh.MeshType = Enum.MeshType.FileMesh 
-                            mesh.MeshId = "rbxassetid://139607718"
-                            mesh.Scale = Vector3.new(1, 1, 1)
-                            mesh.Parent = fake
-                            
-                            local weld = Instance.new("WeldConstraint")
-                            weld.Part0 = rightUpperLeg
-                            weld.Part1 = fake
-                            weld.Parent = fake
-                            
-                            fake.CFrame = rightUpperLeg.CFrame * CFrame.new(0, -0.2, 0)
-                            fake.Parent = char
+                        local fake = char:FindFirstChild("FakeKorbloxMeshPart") or Instance.new("Part")
+                        fake.Name = "FakeKorbloxMeshPart"
+                        fake.Size = Vector3.new(0.5, 1, 0.5)
+                        fake.Anchored = false
+                        fake.CanCollide = false
+                        fake.Massless = true
+                        fake.Transparency = 0
+                        
+                        local torso = char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso")
+                        if torso then
+                            fake.Color = torso.Color
                         end
+                        
+                        fake.CFrame = rightUpperLeg.CFrame * CFrame.new(0, -0.2, 0)
+                        
+                        local mesh = fake:FindFirstChildOfClass("SpecialMesh") or Instance.new("SpecialMesh")
+                        mesh.MeshType = Enum.MeshType.FileMesh 
+                        mesh.MeshId = "rbxassetid://902942093"
+                        mesh.Scale = Vector3.new(1, 1, 1)
+                        mesh.Parent = fake
+                        
+                        local weld = fake:FindFirstChildOfClass("WeldConstraint") or Instance.new("WeldConstraint")
+                        weld.Part0 = rightUpperLeg
+                        weld.Part1 = fake
+                        weld.Parent = fake
+                        
+                        fake.Parent = char
                     else
                         if rightLowerLeg then rightLowerLeg.Transparency = 0 end
                         if rightFoot then rightFoot.Transparency = 0 end
@@ -1807,7 +1802,7 @@ PlayerTab:CreateToggle({
 })
 
 PlayerTab:CreateToggle({
-    Name = "Fake Headless",
+    Name = "Fake Headless (Client-Sided)",
     CurrentValue = false,
     Flag = "FakeHeadlessToggle",
     Callback = function(Value)
@@ -1958,4 +1953,32 @@ if shouldResumeFarm then
         task.wait(15)
         pcall(function()
             -- Cleanly hide the Rayfield UI. We ONLY target the Main frame and avoid touching the toggle button.
-            local containers
+            local containers = {CoreGui, localPlayer:WaitForChild("PlayerGui")}
+            if gethui then table.insert(containers, gethui()) end
+            
+            for _, container in pairs(containers) do
+                if container then
+                    for _, gui in pairs(container:GetChildren()) do
+                        if gui:IsA("ScreenGui") then
+                            local main = gui:FindFirstChild("Main") or gui:FindFirstChild("Rayfield")
+                            if main and main:IsA("Frame") and main.Size.Y.Offset > 100 then 
+                                main.Visible = false
+                            end
+                        end
+                    end
+                end
+            end
+            
+            task.wait(1)
+            
+            local vim = game:GetService("VirtualInputManager")
+            local cam = workspace.CurrentCamera
+            local centerX = cam.ViewportSize.X / 2
+            local centerY = cam.ViewportSize.Y / 2
+            
+            vim:SendTouchEvent(1, 0, centerX, centerY) 
+            task.wait(0.1)
+            vim:SendTouchEvent(1, 1, centerX, centerY)
+        end)
+    end)
+end
