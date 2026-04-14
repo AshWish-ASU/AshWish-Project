@@ -1022,34 +1022,6 @@ local randomOrbitAngle = 0
 local trollTargetPlayer = "None"
 local randomOrbitTarget = nil
 
-local function updateCharacterSize()
-    local char = localPlayer.Character
-    if not char then return end
-    
-    local hum = char:FindFirstChildOfClass("Humanoid")
-    if hum then
-        local bodyScale = 1
-        if Toggles.BigAvatar then 
-            bodyScale = 3
-        elseif Toggles.TinyAvatar then 
-            bodyScale = 0.3
-        end
-        
-        local headScale = bodyScale
-        if Toggles.BigHead then 
-            headScale = bodyScale * 4 
-        end
-        
-        for _, name in ipairs({"BodyWidthScale", "BodyHeightScale", "BodyDepthScale"}) do
-            local val = hum:FindFirstChild(name)
-            if val then val.Value = bodyScale end
-        end
-        
-        local valHead = hum:FindFirstChild("HeadScale")
-        if valHead then valHead.Value = headScale end
-    end
-end
-
 RunService.Stepped:Connect(function()
     if Toggles.Noclip then
         local char = localPlayer.Character
@@ -1058,6 +1030,10 @@ RunService.Stepped:Connect(function()
                 if part:IsA("BasePart") then
                     part.CanCollide = false
                 end
+            end
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            if hum then
+                hum:ChangeState(11)
             end
         end
     end
@@ -1166,12 +1142,11 @@ localPlayer.CharacterAdded:Connect(function(char)
     task.spawn(function()
         task.wait(2)
         applyFakeRank()
-        updateCharacterSize() 
     end)
 end)
 
 TrollTab:CreateDropdown({
-    Name = "Fake Leaderboard Badge",
+    Name = "Fake Leaderboard Badge (Client-Sided)",
     Options = {"None", "Rank 1-10 Badge", "Rank 11-30 Badge", "Rank 31-70 Badge", "Rank 71-100 Badge"},
     CurrentOption = {"None"},
     MultipleOptions = false,
@@ -1312,38 +1287,6 @@ TrollTab:CreateToggle({
     Flag = "NoclipToggle",
     Callback = function(Value)
         Toggles.Noclip = Value
-    end,
-})
-
-TrollTab:CreateToggle({
-    Name = "Big Head (Client-Sided)",
-    CurrentValue = false,
-    Flag = "BigHeadToggle",
-    Callback = function(Value)
-        Toggles.BigHead = Value
-        updateCharacterSize()
-    end,
-})
-
-TrollTab:CreateToggle({
-    Name = "Big Avatar (Client-Sided)",
-    CurrentValue = false,
-    Flag = "BigAvatarToggle",
-    Callback = function(Value)
-        Toggles.BigAvatar = Value
-        if Value then Toggles.TinyAvatar = false end
-        updateCharacterSize()
-    end,
-})
-
-TrollTab:CreateToggle({
-    Name = "Tiny Avatar (Client-Sided)",
-    CurrentValue = false,
-    Flag = "TinyAvatarToggle",
-    Callback = function(Value)
-        Toggles.TinyAvatar = Value
-        if Value then Toggles.BigAvatar = false end
-        updateCharacterSize()
     end,
 })
 
@@ -1815,37 +1758,41 @@ PlayerTab:CreateToggle({
 
                 if rightUpperLeg then
                     if Value then
+                        -- Properly hide all segments of the R15 right leg
                         if rightLowerLeg then rightLowerLeg.Transparency = 1 end
                         if rightFoot then rightFoot.Transparency = 1 end
                         rightUpperLeg.Transparency = 1
                         
-                        local fake = char:FindFirstChild("FakeKorbloxMeshPart") or Instance.new("Part")
-                        fake.Name = "FakeKorbloxMeshPart"
-                        fake.Size = Vector3.new(1, 1, 1) 
-                        fake.Anchored = false
-                        fake.CanCollide = false
-                        fake.Massless = true
-                        fake.Transparency = 0
-                        
-                        local torso = char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso")
-                        if torso then
-                            fake.Color = torso.Color
+                        -- Generate the Fake Korblox Limb
+                        local fake = char:FindFirstChild("FakeKorbloxMeshPart")
+                        if not fake then
+                            fake = Instance.new("Part")
+                            fake.Name = "FakeKorbloxMeshPart"
+                            fake.Size = Vector3.new(0.5, 1, 0.5)
+                            fake.Anchored = false
+                            fake.CanCollide = false
+                            fake.Massless = true
+                            fake.Transparency = 0
+                            
+                            local torso = char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso")
+                            if torso then
+                                fake.Color = torso.Color
+                            end
+                            
+                            local mesh = Instance.new("SpecialMesh")
+                            mesh.MeshType = Enum.MeshType.FileMesh 
+                            mesh.MeshId = "rbxassetid://139607718"
+                            mesh.Scale = Vector3.new(1, 1, 1)
+                            mesh.Parent = fake
+                            
+                            local weld = Instance.new("WeldConstraint")
+                            weld.Part0 = rightUpperLeg
+                            weld.Part1 = fake
+                            weld.Parent = fake
+                            
+                            fake.CFrame = rightUpperLeg.CFrame * CFrame.new(0, -0.2, 0)
+                            fake.Parent = char
                         end
-                        
-                        fake.CFrame = rightUpperLeg.CFrame * CFrame.new(0, -0.5, 0)
-                        
-                        local mesh = fake:FindFirstChildOfClass("SpecialMesh") or Instance.new("SpecialMesh")
-                        mesh.MeshType = Enum.MeshType.FileMesh 
-                        mesh.MeshId = "http://www.roblox.com/asset/?id=139607718"
-                        mesh.Scale = Vector3.new(1, 1, 1)
-                        mesh.Parent = fake
-                        
-                        local weld = fake:FindFirstChildOfClass("WeldConstraint") or Instance.new("WeldConstraint")
-                        weld.Part0 = rightUpperLeg
-                        weld.Part1 = fake
-                        weld.Parent = fake
-                        
-                        fake.Parent = char
                     else
                         if rightLowerLeg then rightLowerLeg.Transparency = 0 end
                         if rightFoot then rightFoot.Transparency = 0 end
@@ -1906,19 +1853,6 @@ MiscTab:CreateButton({
        ClearEsp()
        RestoreHitboxes()
        if fakeRankGui then pcall(function() fakeRankGui:Destroy() end) end
-       
-       pcall(function()
-           local char = localPlayer.Character
-           if char then
-               local hum = char:FindFirstChild("Humanoid")
-               if hum then
-                   for _, name in ipairs({"BodyWidthScale", "BodyHeightScale", "BodyDepthScale", "HeadScale"}) do
-                       local val = hum:FindFirstChild(name)
-                       if val then val.Value = 1 end
-                   end
-               end
-           end
-       end)
        
        if trackerGui then trackerGui:Destroy() end
        Rayfield:Destroy()
@@ -2024,32 +1958,4 @@ if shouldResumeFarm then
         task.wait(15)
         pcall(function()
             -- Cleanly hide the Rayfield UI. We ONLY target the Main frame and avoid touching the toggle button.
-            local containers = {CoreGui, localPlayer:WaitForChild("PlayerGui")}
-            if gethui then table.insert(containers, gethui()) end
-            
-            for _, container in pairs(containers) do
-                if container then
-                    for _, gui in pairs(container:GetChildren()) do
-                        if gui:IsA("ScreenGui") then
-                            local main = gui:FindFirstChild("Main") or gui:FindFirstChild("Rayfield")
-                            if main and main:IsA("Frame") and main.Size.Y.Offset > 100 then 
-                                main.Visible = false
-                            end
-                        end
-                    end
-                end
-            end
-            
-            task.wait(1)
-            
-            local vim = game:GetService("VirtualInputManager")
-            local cam = workspace.CurrentCamera
-            local centerX = cam.ViewportSize.X / 2
-            local centerY = cam.ViewportSize.Y / 2
-            
-            vim:SendTouchEvent(1, 0, centerX, centerY) 
-            task.wait(0.1)
-            vim:SendTouchEvent(1, 1, centerX, centerY)
-        end)
-    end)
-end
+            local containers
