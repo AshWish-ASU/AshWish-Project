@@ -191,6 +191,10 @@ end
 local sharedVisualColor = Color3.fromRGB(255, 50, 50)
 local rainbowVisuals = false
 
+RunService.RenderStepped:Connect(function()
+    if rainbowVisuals then sharedVisualColor = Color3.fromHSV(os.clock() % 4 / 4, 1, 1) end
+end)
+
 local function FormatNum(value)
     local n = tonumber(value) or 0
     n = mFloor(n)
@@ -615,7 +619,7 @@ TeleportToggleObj = AutoFarmTab:CreateToggle({
 ---------------------------------------------------------
 -- 2. PROTECTION TAB
 ---------------------------------------------------------
-ProtectionTab:CreateSection("Network and Client Safety")
+ProtectionTab:CreateSection("Network and Security")
 
 local AutoReconnectToggleObj
 AutoReconnectToggleObj = ProtectionTab:CreateToggle({
@@ -1043,7 +1047,7 @@ end
 
 task.spawn(function()
     while task.wait(0.1) do
-        if Toggles.GiantHead or Toggles.StretchChar or Toggles.SquashChar then
+        if Toggles.GiantHead or Toggles.GiantChar or Toggles.TinyChar then
             local char = localPlayer.Character
             if char then
                 cacheSelfSize(char)
@@ -1053,10 +1057,10 @@ task.spawn(function()
                             if Toggles.GiantHead and part.Name == "Head" then
                                 part.Size = Vector3.new(5, 5, 5)
                             elseif part.Name ~= "Head" then
-                                if Toggles.StretchChar then
-                                    part.Size = Vector3.new(originalSelfSizes[part].X, 4, originalSelfSizes[part].Z)
-                                elseif Toggles.SquashChar then
-                                    part.Size = Vector3.new(originalSelfSizes[part].X, 0.1, originalSelfSizes[part].Z)
+                                if Toggles.GiantChar then
+                                    part.Size = originalSelfSizes[part] * 5
+                                elseif Toggles.TinyChar then
+                                    part.Size = originalSelfSizes[part] * 0.2
                                 end
                             end
                         end)
@@ -1097,7 +1101,7 @@ RunService.RenderStepped:Connect(function()
             end
             
             if Toggles.BangPlayer then
-                local offsetZ = math.sin(tick() * 35) * 3 
+                local offsetZ = math.sin(tick() * 20) * 5 
                 hrp.CFrame = targetHrp.CFrame * CFrame.new(0, 0, offsetZ)
             end
             
@@ -1264,6 +1268,8 @@ TrollTab:CreateToggle({
     end,
 })
 
+local randomOrbitTarget = nil
+local randomOrbitAngle = 0
 task.spawn(function()
     while task.wait(3) do
         if Toggles.OrbitRandom then
@@ -1290,6 +1296,26 @@ TrollTab:CreateToggle({
 TrollTab:CreateSection("Self Trolls (Client-Sided)")
 
 TrollTab:CreateToggle({
+    Name = "Enable Noclip (Client-Sided)",
+    CurrentValue = false,
+    Flag = "NoclipToggle",
+    Callback = function(Value)
+        isNoclipping = Value
+    end,
+})
+
+RunService.Stepped:Connect(function()
+    local char = localPlayer.Character
+    if char and isNoclipping then
+        for _, part in pairs(char:GetDescendants()) do
+            if part:IsA("BasePart") and part.CanCollide then
+                part.CanCollide = false
+            end
+        end
+    end
+end)
+
+TrollTab:CreateToggle({
     Name = "Fast Spin",
     CurrentValue = false,
     Flag = "SeizureSpinToggle",
@@ -1313,31 +1339,31 @@ TrollTab:CreateToggle({
     Flag = "GiantHeadToggle",
     Callback = function(Value)
         Toggles.GiantHead = Value
-        if not Value and not Toggles.StretchChar and not Toggles.SquashChar then
+        if not Value and not Toggles.GiantChar and not Toggles.TinyChar then
             restoreSelfSize()
         end
     end,
 })
 
 TrollTab:CreateToggle({
-    Name = "Stretch Character (Client-Sided)",
+    Name = "Giant Character (Client-Sided)",
     CurrentValue = false,
-    Flag = "StretchCharToggle",
+    Flag = "GiantCharToggle",
     Callback = function(Value)
-        Toggles.StretchChar = Value
-        if not Value and not Toggles.GiantHead and not Toggles.SquashChar then
+        Toggles.GiantChar = Value
+        if not Value and not Toggles.GiantHead and not Toggles.TinyChar then
             restoreSelfSize()
         end
     end,
 })
 
 TrollTab:CreateToggle({
-    Name = "Squash Character (Client-Sided)",
+    Name = "Tiny Character (Client-Sided)",
     CurrentValue = false,
-    Flag = "SquashCharToggle",
+    Flag = "TinyCharToggle",
     Callback = function(Value)
-        Toggles.SquashChar = Value
-        if not Value and not Toggles.GiantHead and not Toggles.StretchChar then
+        Toggles.TinyChar = Value
+        if not Value and not Toggles.GiantHead and not Toggles.GiantChar then
             restoreSelfSize()
         end
     end,
@@ -1716,29 +1742,6 @@ end)
 ---------------------------------------------------------
 -- 8. PLAYER SETTINGS TAB
 ---------------------------------------------------------
-PlayerTab:CreateSection("Clipping")
-
-local isNoclipping = false
-PlayerTab:CreateToggle({
-    Name = "Enable Noclip",
-    CurrentValue = false,
-    Flag = "NoclipToggle",
-    Callback = function(Value)
-        isNoclipping = Value
-    end,
-})
-
-RunService.Stepped:Connect(function()
-    local char = localPlayer.Character
-    if char and isNoclipping then
-        for _, part in pairs(char:GetDescendants()) do
-            if part:IsA("BasePart") and part.CanCollide then
-                part.CanCollide = false
-            end
-        end
-    end
-end)
-
 PlayerTab:CreateSection("Player Movement")
 
 local customWalkSpeed = 16
@@ -1817,6 +1820,75 @@ task.spawn(function()
         end
     end
 end)
+
+PlayerTab:CreateSection("Local Avatar Modifications (Client-Sided)")
+
+PlayerTab:CreateToggle({
+    Name = "Fake Korblox (Right Leg)",
+    CurrentValue = false,
+    Flag = "FakeKorbloxToggle",
+    Callback = function(Value)
+        pcall(function()
+            local char = localPlayer.Character
+            if char then
+                local rightLeg = char:FindFirstChild("Right Leg") or char:FindFirstChild("RightLowerLeg")
+                if rightLeg then
+                    if Value then
+                        -- Set to Korblox ID
+                        if char:FindFirstChild("Humanoid") and char.Humanoid.RigType == Enum.HumanoidRigType.R15 then
+                            -- R15 logic if needed, else simple hide for R6
+                            rightLeg.Transparency = 1
+                        else
+                            rightLeg.Transparency = 1
+                            local fakeLimb = Instance.new("Part")
+                            fakeLimb.Name = "FakeKorbloxLimb"
+                            fakeLimb.Size = Vector3.new(0.5, 1, 0.5)
+                            fakeLimb.CFrame = rightLeg.CFrame
+                            fakeLimb.CanCollide = false
+                            fakeLimb.Anchored = false
+                            fakeLimb.Transparency = 1
+                            
+                            local mesh = Instance.new("SpecialMesh")
+                            mesh.MeshId = "rbxassetid://139607718"
+                            mesh.Parent = fakeLimb
+                            
+                            local weld = Instance.new("WeldConstraint")
+                            weld.Part0 = rightLeg
+                            weld.Part1 = fakeLimb
+                            weld.Parent = fakeLimb
+                            
+                            fakeLimb.Parent = char
+                        end
+                    else
+                        rightLeg.Transparency = 0
+                        local fakeLimb = char:FindFirstChild("FakeKorbloxLimb")
+                        if fakeLimb then fakeLimb:Destroy() end
+                    end
+                end
+            end
+        end)
+    end,
+})
+
+PlayerTab:CreateToggle({
+    Name = "Fake Headless",
+    CurrentValue = false,
+    Flag = "FakeHeadlessToggle",
+    Callback = function(Value)
+        pcall(function()
+            local char = localPlayer.Character
+            if char and char:FindFirstChild("Head") then
+                if Value then
+                    char.Head.Transparency = 1
+                    if char.Head:FindFirstChild("face") then char.Head.face.Transparency = 1 end
+                else
+                    char.Head.Transparency = 0
+                    if char.Head:FindFirstChild("face") then char.Head.face.Transparency = 0 end
+                end
+            end
+        end)
+    end,
+})
 
 ---------------------------------------------------------
 -- 9. MISC TAB
