@@ -1146,7 +1146,7 @@ localPlayer.CharacterAdded:Connect(function(char)
 end)
 
 TrollTab:CreateDropdown({
-    Name = "Fake Leaderboard Badge",
+    Name = "Fake Leaderboard Badge (Client-Sided)",
     Options = {"None", "Rank 1-10 Badge", "Rank 11-30 Badge", "Rank 31-70 Badge", "Rank 71-100 Badge"},
     CurrentOption = {"None"},
     MultipleOptions = false,
@@ -1758,10 +1758,12 @@ PlayerTab:CreateToggle({
 
                 if rightUpperLeg then
                     if Value then
+                        -- Properly hide all segments of the R15 right leg
                         if rightLowerLeg then rightLowerLeg.Transparency = 1 end
                         if rightFoot then rightFoot.Transparency = 1 end
                         rightUpperLeg.Transparency = 1
                         
+                        -- Generate the Fake Korblox Limb
                         local fake = char:FindFirstChild("FakeKorbloxMeshPart") or Instance.new("Part")
                         fake.Name = "FakeKorbloxMeshPart"
                         fake.Size = Vector3.new(0.5, 1, 0.5) 
@@ -1770,14 +1772,10 @@ PlayerTab:CreateToggle({
                         fake.Massless = true
                         fake.Transparency = 0
                         
-                        -- Set actual icy color and material
-                        fake.Color = Color3.fromRGB(153, 217, 234)
-                        fake.Material = Enum.Material.Ice
-                        
                         local mesh = fake:FindFirstChildOfClass("SpecialMesh") or Instance.new("SpecialMesh")
                         mesh.MeshType = Enum.MeshType.FileMesh 
-                        -- Using the raw 3D Geometry ID for Korblox Right Leg
                         mesh.MeshId = "rbxassetid://902942093"
+                        mesh.TextureId = "rbxassetid://902843398"
                         mesh.Scale = Vector3.new(1, 1, 1)
                         mesh.Parent = fake
                         
@@ -1786,7 +1784,7 @@ PlayerTab:CreateToggle({
                         weld.Part1 = fake
                         weld.Parent = fake
                         
-                        -- Pushed offset UP so it connects cleanly at the hip instead of the knee
+                        -- Offset pushed UP to attach directly to the hip socket
                         fake.CFrame = rightUpperLeg.CFrame * CFrame.new(0, 0.35, 0)
                         fake.Parent = char
                     else
