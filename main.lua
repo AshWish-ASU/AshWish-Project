@@ -1146,7 +1146,7 @@ localPlayer.CharacterAdded:Connect(function(char)
 end)
 
 TrollTab:CreateDropdown({
-    Name = "Fake Leaderboard Badge",
+    Name = "Fake Leaderboard Badge (Client-Sided)",
     Options = {"None", "Rank 1-10 Badge", "Rank 11-30 Badge", "Rank 31-70 Badge", "Rank 71-100 Badge"},
     CurrentOption = {"None"},
     MultipleOptions = false,
@@ -1763,7 +1763,7 @@ PlayerTab:CreateToggle({
                         if rightFoot then rightFoot.Transparency = 1 end
                         rightUpperLeg.Transparency = 1
                         
-                        -- Generate the Fake Korblox Limb
+                        -- Generate the Fake Korblox Limb using the true 3D mesh and blue ice texture
                         local fake = char:FindFirstChild("FakeKorbloxMeshPart") or Instance.new("Part")
                         fake.Name = "FakeKorbloxMeshPart"
                         fake.Size = Vector3.new(0.5, 1, 0.5)
@@ -1771,14 +1771,12 @@ PlayerTab:CreateToggle({
                         fake.CanCollide = false
                         fake.Massless = true
                         fake.Transparency = 0
-                        fake.Color = Color3.fromRGB(153, 217, 234)
-                        fake.Material = Enum.Material.Ice
-                        
-                        fake.CFrame = rightUpperLeg.CFrame * CFrame.new(0, -0.5, 0)
+                        fake.CFrame = rightUpperLeg.CFrame * CFrame.new(0, -0.2, 0)
                         
                         local mesh = fake:FindFirstChildOfClass("SpecialMesh") or Instance.new("SpecialMesh")
                         mesh.MeshType = Enum.MeshType.FileMesh 
-                        mesh.MeshId = "rbxassetid://139607718"
+                        mesh.MeshId = "rbxassetid://902942093"
+                        mesh.TextureId = "rbxassetid://902843398"
                         mesh.Scale = Vector3.new(1, 1, 1)
                         mesh.Parent = fake
                         
