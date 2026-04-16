@@ -1078,7 +1078,7 @@ localPlayer.CharacterAdded:Connect(function(char)
 end)
 
 TrollTab:CreateDropdown({
-    Name = "Fake Leaderboard Badge (Client-Sided)",
+    Name = "Fake Leaderboard Badge",
     Options = {"None", "Rank 1-10 Badge", "Rank 11-30 Badge", "Rank 31-70 Badge", "Rank 71-100 Badge"},
     CurrentOption = {"None"},
     MultipleOptions = false,
@@ -1756,15 +1756,16 @@ PlayerTab:CreateToggle({
                 local rightLowerLeg = char:FindFirstChild("RightLowerLeg")
                 local rightFoot = char:FindFirstChild("RightFoot")
                 local rightUpperLeg = char:FindFirstChild("RightUpperLeg")
+                local lowerTorso = char:FindFirstChild("LowerTorso")
 
-                if rightUpperLeg then
+                if rightUpperLeg and lowerTorso then
                     if Value then
-                        -- Properly hide all segments of the R15 right leg
+                        -- Hide all segments of the R15 right leg
                         if rightLowerLeg then rightLowerLeg.Transparency = 1 end
                         if rightFoot then rightFoot.Transparency = 1 end
                         rightUpperLeg.Transparency = 1
                         
-                        -- Generate the Fake Korblox Limb using the true 3D mesh and blue ice texture
+                        -- Generate the Fake Korblox Limb using correct mesh and texture
                         local fake = char:FindFirstChild("FakeKorbloxMeshPart") or Instance.new("Part")
                         fake.Name = "FakeKorbloxMeshPart"
                         fake.Size = Vector3.new(0.5, 1, 0.5)
@@ -1781,11 +1782,12 @@ PlayerTab:CreateToggle({
                         mesh.Parent = fake
                         
                         local weld = fake:FindFirstChildOfClass("WeldConstraint") or Instance.new("WeldConstraint")
-                        weld.Part0 = rightUpperLeg
+                        weld.Part0 = lowerTorso
                         weld.Part1 = fake
                         weld.Parent = fake
                         
-                        fake.CFrame = rightUpperLeg.CFrame * CFrame.new(0, -0.25, 0)
+                        -- Set CFrame relative to LowerTorso for correct hip placement
+                        fake.CFrame = lowerTorso.CFrame * CFrame.new(0.5, -0.85, 0)
                         fake.Parent = char
                     else
                         if rightLowerLeg then rightLowerLeg.Transparency = 0 end
