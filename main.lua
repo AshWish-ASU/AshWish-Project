@@ -1222,15 +1222,6 @@ TrollTab:CreateToggle({
     end,
 })
 
-task.spawn(function()
-    local list = {}
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= localPlayer then table.insert(list, plr.Name) end
-    end
-    if #list == 0 then table.insert(list, "None") end
-    TrollDropdown:Refresh(list, true)
-end)
-
 -- CORE TROLL LOOP
 RunService.Stepped:Connect(function()
     if Toggles.Noclip then
@@ -1756,15 +1747,16 @@ PlayerTab:CreateToggle({
                 local rightLowerLeg = char:FindFirstChild("RightLowerLeg")
                 local rightFoot = char:FindFirstChild("RightFoot")
                 local rightUpperLeg = char:FindFirstChild("RightUpperLeg")
+                local lowerTorso = char:FindFirstChild("LowerTorso")
 
-                if rightUpperLeg then
+                if rightUpperLeg and lowerTorso then
                     if Value then
-                        -- Properly hide all segments of the R15 right leg
+                        -- Hide all segments of the R15 right leg
                         if rightLowerLeg then rightLowerLeg.Transparency = 1 end
                         if rightFoot then rightFoot.Transparency = 1 end
                         rightUpperLeg.Transparency = 1
                         
-                        -- Generate the Fake Korblox Limb using the true 3D mesh and blue ice texture
+                        -- Generate the Fake Korblox Limb using correct mesh and texture
                         local fake = char:FindFirstChild("FakeKorbloxMeshPart") or Instance.new("Part")
                         fake.Name = "FakeKorbloxMeshPart"
                         fake.Size = Vector3.new(0.5, 1, 0.5)
@@ -1781,12 +1773,12 @@ PlayerTab:CreateToggle({
                         mesh.Parent = fake
                         
                         local weld = fake:FindFirstChildOfClass("WeldConstraint") or Instance.new("WeldConstraint")
-                        weld.Part0 = rightUpperLeg
+                        weld.Part0 = lowerTorso
                         weld.Part1 = fake
                         weld.Parent = fake
                         
-                        -- Offset pushed UP to attach directly to the hip socket
-                        fake.CFrame = rightUpperLeg.CFrame * CFrame.new(0, -0.25, 0)
+                        -- Set CFrame relative to LowerTorso for correct hip placement
+                        fake.CFrame = lowerTorso.CFrame * CFrame.new(0.5, -0.85, 0)
                         fake.Parent = char
                     else
                         if rightLowerLeg then rightLowerLeg.Transparency = 0 end
@@ -1947,4 +1939,47 @@ if shouldResumeFarm then
         task.wait(0.2)
         pcall(function() if TeleportToggleObj then TeleportToggleObj:Set(true) end end)
         task.wait(0.2)
-        pcall(function() if AntiAfkToggleObj then AntiAfkToggleObj:
+        pcall(function() if AntiAfkToggleObj then AntiAfkToggleObj:Set(true) end end)
+        task.wait(0.2)
+        pcall(function() if AutoReconnectToggleObj then AutoReconnectToggleObj:Set(true) end end)
+        task.wait(0.2)
+        pcall(function() if AntiLagToggleObj then AntiLagToggleObj:Set(true) end end)
+        task.wait(0.2)
+        pcall(function() if AntiModToggleObj then AntiModToggleObj:Set(true) end end)
+        
+        -- Advanced Engine Optimizer Trigger
+        AdvancedFPSBoost()
+        
+        -- Wait 15 seconds, then safely hide the Rayfield UI and wake up the Waterbeam
+        task.wait(15)
+        pcall(function()
+            -- Cleanly hide the Rayfield UI. We ONLY target the Main frame and avoid touching the toggle button.
+            local containers = {CoreGui, localPlayer:WaitForChild("PlayerGui")}
+            if gethui then table.insert(containers, gethui()) end
+            
+            for _, container in pairs(containers) do
+                if container then
+                    for _, gui in pairs(container:GetChildren()) do
+                        if gui:IsA("ScreenGui") then
+                            local main = gui:FindFirstChild("Main") or gui:FindFirstChild("Rayfield")
+                            if main and main:IsA("Frame") and main.Size.Y.Offset > 100 then 
+                                main.Visible = false
+                            end
+                        end
+                    end
+                end
+            end
+            
+            task.wait(1)
+            
+            local vim = game:GetService("VirtualInputManager")
+            local cam = workspace.CurrentCamera
+            local centerX = cam.ViewportSize.X / 2
+            local centerY = cam.ViewportSize.Y / 2
+            
+            vim:SendTouchEvent(1, 0, centerX, centerY) 
+            task.wait(0.1)
+            vim:SendTouchEvent(1, 1, centerX, centerY)
+        end)
+    end)
+end
