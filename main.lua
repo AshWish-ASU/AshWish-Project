@@ -301,7 +301,7 @@ AutoFarmTab:CreateSection("Combat Farm")
 local lastMeleeHit = 0
 local nextMagicCheck = 0
 local cachedMagicType = nil
-local customHitSpeed = 0.5 
+local customHitSpeed = 0.4 
 
 local FarmToggleObj = AutoFarmTab:CreateToggle({
     Name = "Auto Farm All",
@@ -356,7 +356,7 @@ local HitSpeedSliderObj = AutoFarmTab:CreateSlider({
     Range = {0.1, 1.0},
     Increment = 0.05,
     Suffix = "Seconds",
-    CurrentValue = 0.5,
+    CurrentValue = 0.4,
     Flag = "HitSpeedSlider",
     Callback = function(Value)
         customHitSpeed = Value
@@ -376,9 +376,9 @@ AutoFarmTab:CreateButton({
 AutoFarmTab:CreateButton({
     Name = "Reset Normal Hit Speed",
     Callback = function()
-        customHitSpeed = 0.5
+        customHitSpeed = 0.4
         if HitSpeedSliderObj then
-            HitSpeedSliderObj:Set(0.5)
+            HitSpeedSliderObj:Set(0.4)
         end
     end
 })
@@ -653,14 +653,14 @@ if shouldResumeFarm then
         local char = localPlayer.Character or localPlayer.CharacterAdded:Wait()
         char:WaitForChild("HumanoidRootPart", 9e9)
         
-        task.wait(20) 
+        task.wait(7) 
         
         -- Engage Auto-Resume Protections
         OptimizeFPS()
         
         -- Explicitly lock speed to safe defaults so it doesn't instantly flag upon rejoin
-        customHitSpeed = 0.5
-        if HitSpeedSliderObj then HitSpeedSliderObj:Set(0.5) end
+        customHitSpeed = 0.4
+        if HitSpeedSliderObj then HitSpeedSliderObj:Set(0.4) end
         
         pcall(function() if FarmToggleObj then FarmToggleObj:Set(true) end end)
         task.wait(0.2)
@@ -670,6 +670,6 @@ if shouldResumeFarm then
         task.wait(0.2)
         pcall(function() if AAFKToggleObj then AAFKToggleObj:Set(true) end end)
         
-        SendWebhookPing("🔄 REJOIN SUCCESSFUL", "Account has fully reconnected and resumed farming after the 20s delay.", tonumber(0x00FF00), false, "Rejoin")
+        SendWebhookPing("🔄 REJOIN SUCCESSFUL", "Account has fully reconnected and resumed farming after the 7s delay.", tonumber(0x00FF00), false, "Rejoin")
     end)
 end
