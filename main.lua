@@ -22,6 +22,7 @@ local isPC = UserInputService.KeyboardEnabled
 -- ==========================================
 local sessionStartTime = os.time()
 local isFarming = false
+local autoFarmStartTime = 0
 local startLevel = 0
 local lastTrackedLevel = 0
 local sessionLevelsGained = 0
@@ -42,6 +43,15 @@ local DummyLocations = {
     Vector3.new(-639.3341674804688, -157.77249145507812, 769.9412841796875)
 }
 local ActiveDummyTarget = nil
+
+-- Cached Remotes & Folders for Extreme Optimization
+local hitRemote = ReplicatedStorage:WaitForChild("Events", 5) and ReplicatedStorage.Events:WaitForChild("Hit", 5)
+local fbStorage = ReplicatedStorage:FindFirstChild("FireballReplicatedStorage")
+local fbRemote = fbStorage and fbStorage:FindFirstChild("RemoteEvent")
+local sbRemote = fbStorage and fbStorage:FindFirstChild("RemoteEvent1")
+
+local mapFolder = workspace:WaitForChild("Map", 5)
+local dummysFolder = mapFolder and mapFolder:WaitForChild("dummys", 5)
 
 -- Analytics Data Save
 local trackerFileName = "LM_LevelAnalytics.json"
@@ -123,49 +133,49 @@ local function getLevel()
     return lvl 
 end
 
-local function GetMagicTool()
-    local hasFireball = false
-    local hasSnowball = false
-
+local function GetAndEquipMagicTool(allowSnowball)
     local char = localPlayer.Character
     local bp = localPlayer:FindFirstChild("Backpack")
+    local hum = char and char:FindFirstChild("Humanoid")
+    if not char or not bp or not hum then return nil end
 
-    if char then
-        for _, item in pairs(char:GetChildren()) do
+    local fireballTool, snowballTool = nil, nil
+
+    local function scanFolder(folder)
+        for _, item in pairs(folder:GetChildren()) do
             if item:IsA("Tool") then
                 local n = string.lower(item.Name)
-                if string.find(n, "fireball") then hasFireball = true end
-                if string.find(n, "snowball") then hasSnowball = true end
-            end
-        end
-    end
-    
-    if bp and not hasFireball then
-        for _, item in pairs(bp:GetChildren()) do
-            if item:IsA("Tool") then
-                local n = string.lower(item.Name)
-                if string.find(n, "fireball") then hasFireball = true end
-                if string.find(n, "snowball") then hasSnowball = true end
+                if string.find(n, "fireball") then fireballTool = item end
+                if string.find(n, "snowball") then snowballTool = item end
             end
         end
     end
 
-    if hasFireball then return "Fireball" end
-    if hasSnowball then return "Snowball" end
+    scanFolder(char)
+    if not fireballTool then scanFolder(bp) end -- Only scan backpack if not in hand
+
+    local toolToUse = fireballTool or (allowSnowball and snowballTool)
+
+    if toolToUse and toolToUse.Parent == bp then
+        hum:EquipTool(toolToUse)
+    end
+
+    if toolToUse then
+        if string.find(string.lower(toolToUse.Name), "fireball") then return "Fireball" end
+        return "Snowball"
+    end
     return nil
 end
 
 local function GetClosestDummy()
+    if not dummysFolder then return nil end
     local closestDummy = nil
-    local shortestDist = math.huge
-    local char = localPlayer.Character
-    local myPos = char and char:FindFirstChild("HumanoidRootPart") and char.HumanoidRootPart.Position
+    local shortestDist = 50000 -- Optimization: reasonable max distance
+    local myHrp = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart")
     
-    local mapFolder = workspace:FindFirstChild("Map")
-    local dummysFolder = mapFolder and mapFolder:FindFirstChild("dummys")
-
-    if myPos and dummysFolder then
-        for _, dummy in pairs(dummysFolder:GetChildren()) do
+    if myHrp then
+        local myPos = myHrp.Position
+        for _, dummy in ipairs(dummysFolder:GetChildren()) do
             local hrp = dummy:FindFirstChild("HumanoidRootPart")
             if hrp then
                 local dist = (hrp.Position - myPos).Magnitude
@@ -237,11 +247,143 @@ local function SendWebhookPing(title, desc, color, pingUsers, isDailyReport, isE
     end
 end
 
--- FIRE INITIAL EXECUTION WEBHOOK
+-- INITIAL EXECUTION WEBHOOK
 task.spawn(function()
     task.wait(2)
     SendWebhookPing("🚀 SCRIPT EXECUTED", "Level Masters Script has been successfully Executed.", tonumber(0x8A2BE2), false, false, true)
 end)
+
+-- 10-MINUTE PERIODIC WEBHOOK
+task.spawn(function()
+    while task.wait(600) do
+        if isFarming and sessionFarmingSeconds > 0 then
+            SendWebhookPing("⏱️ 10 MINUTE STATUS UPDATE", "Periodic progress report for the current session.", tonumber(0x00A2FF), false, false, false)
+        end
+    end
+end)
+
+-- ==========================================
+-- UI WINDOW SETUP
+-- ==========================================
+local Window = Rayfield:CreateWindow({
+    Name = "Level Masters Script | v1.00", 
+    LoadingTitle = "Level Masters Loading", 
+    LoadingSubtitle = "By: Ash", 
+    ConfigurationSaving = {Enabled=false}, 
+    KeySystem = false
+})
+
+-- TABS
+local AutoFarmTab = Window:CreateTab("Auto Farm", 4483362458)
+local AnalyticsTab = Window:CreateTab("Level Analytics", 4483362458)
+local SecurityTab = Window:CreateTab("Security", 4483362458)
+local PlayerTab = Window:CreateTab("Player Settings", 4483362458)
+local ESPTab = Window:CreateTab("ESP", 4483362458)
+local MiscTab = Window:CreateTab("Misc", 4483362458)
+
+-- ==========================================
+-- TAB 1: AUTO FARM
+-- ==========================================
+AutoFarmTab:CreateSection("Combat Farm")
+
+local lastMeleeHit = 0
+local nextMagicCheck = 0
+local cachedMagicType = nil
+local customHitSpeed = 0.6 -- Default 
+
+local FarmToggleObj = AutoFarmTab:CreateToggle({
+    Name = "Auto Farm All",
+    CurrentValue = false,
+    Flag = "AutoFarmAll",
+    Callback = function(Value)
+        Toggles.AutoFarmAll = Value
+        isFarming = Value
+        if Value then autoFarmStartTime = os.clock() end
+        
+        if Value then
+            task.spawn(function()
+                while Toggles.AutoFarmAll do
+                    local now = os.clock()
+                    
+                    -- Tool Equipping Engine
+                    if now >= nextMagicCheck then
+                        local allowSnowball = (now - autoFarmStartTime) >= 6
+                        cachedMagicType = GetAndEquipMagicTool(allowSnowball)
+                        nextMagicCheck = now + 1
+                    end
+                    
+                    -- Target Logic
+                    if not ActiveDummyTarget then
+                        ActiveDummyTarget = DummyLocations[math.random(1, #DummyLocations)]
+                    end
+                    
+                    -- 1. Auto Hit
+                    if now - lastMeleeHit >= customHitSpeed then
+                        local closestDummy = GetClosestDummy()
+                        if closestDummy then
+                            local dummyHum = closestDummy:FindFirstChild("Humanoid")
+                            if dummyHum and hitRemote then 
+                                hitRemote:FireServer(dummyHum) 
+                            end
+                        end
+                        lastMeleeHit = now
+                    end
+                    
+                    -- 2. Auto Magic
+                    if cachedMagicType == "Fireball" and fbRemote then
+                        fbRemote:FireServer(ActiveDummyTarget)
+                    elseif cachedMagicType == "Snowball" and sbRemote then
+                        sbRemote:FireServer(ActiveDummyTarget)
+                    end
+                    
+                    task.wait(0.03) 
+                end
+            end)
+        end
+    end,
+})
+
+AutoFarmTab:CreateSlider({
+    Name = "Melee Hit Cooldown",
+    Range = {0.1, 1.0},
+    Increment = 0.05,
+    Suffix = "Seconds",
+    CurrentValue = 0.6,
+    Flag = "HitSpeedSlider",
+    Callback = function(Value)
+        customHitSpeed = Value
+    end,
+})
+
+AutoFarmTab:CreateSection("Movement")
+
+local TeleportToggleObj
+TeleportToggleObj = AutoFarmTab:CreateToggle({
+    Name = "Teleport To Dummy",
+    CurrentValue = false,
+    Flag = "AutoTeleport",
+    Callback = function(Value)
+        if Value then
+            if localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                ActiveDummyTarget = DummyLocations[math.random(1, #DummyLocations)]
+                localPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(ActiveDummyTarget) * CFrame.new(0, 0, 4)
+            end
+            task.spawn(function()
+                task.wait(0.5)
+                TeleportToggleObj:Set(false)
+            end)
+        end
+    end,
+})
+
+-- ==========================================
+-- TAB 2: LEVEL ANALYTICS
+-- ==========================================
+AnalyticsTab:CreateSection("Session Progress")
+local SessionStatsPara = AnalyticsTab:CreateParagraph({Title = "Live Tracking", Content = "Waiting to start..."})
+
+AnalyticsTab:CreateSection("Future Projections")
+local ProjPara = AnalyticsTab:CreateParagraph({Title = "Level Estimations", Content = "Waiting to start..."})
 
 -- ==========================================
 -- BLACK STAT TRACKER UI
@@ -296,7 +438,7 @@ task.spawn(function()
             trackerData.LifetimeFarmingSeconds = trackerData.LifetimeFarmingSeconds + 1
 
             if trackerData.FarmingSeconds >= 86400 then
-                SendWebhookPing("📅 24 HOUR FARM REPORT", "A full 24 hours of grinding has been completed", tonumber(0x00FFFF), true, true, false)
+                SendWebhookPing("📅 24 HOUR FARM REPORT", "A full 24 hours of grinding has been completed.", tonumber(0x00FFFF), true, true, false)
                 table.insert(trackerData.Logs, 1, trackerData.LevelsGained)
                 if #trackerData.Logs > 10 then table.remove(trackerData.Logs, 11) end
                 trackerData.FarmingSeconds = 0
@@ -309,135 +451,25 @@ task.spawn(function()
             local lpm = currentLvlPerSec * 60
             local lph = currentLvlPerSec * 3600
             
-            statsLabel.Text = string.format("Status: ACTIVE\n\nTime Farmed This Session: %s\nLevels Gained: %s\nLPM: %.1f\nLPH: %.1f", 
-                tStr, FormatNum(sessionLevelsGained), lpm, lph)
+            statsLabel.Text = string.format("Status: ACTIVE\n\nTime Farmed This Session: %s\nLevels Gained: %s\nLPM: %.1f\nLPH: %.1f", tStr, FormatNum(sessionLevelsGained), lpm, lph)
+                
+            SessionStatsPara:Set({Title = "Live Tracking", Content = string.format("Time Farmed: %s\nLevels Gained: %s\nLPM: %.1f\nLPH: %.1f", tStr, FormatNum(sessionLevelsGained), lpm, lph)})
+            ProjPara:Set({Title = "Future Projections", Content = string.format("1 Day Gain: %s\n3 Days Gain: %s\n1 Week Gain: %s\n1 Month Gain: %s", FormatNum(lph * 24), FormatNum(lph * 72), FormatNum(lph * 168), FormatNum(lph * 720))})
         else
-            statsLabel.Text = string.format("Status: IDLE\n\nTime Farmed This Session: %s\nLevels Gained: %s\nLPM: 0.0\nLPH: 0.0", 
-                tStr, FormatNum(sessionLevelsGained))
+            statsLabel.Text = string.format("Status: IDLE\n\nTime Farmed This Session: %s\nLevels Gained: %s\nLPM: 0.0\nLPH: 0.0", tStr, FormatNum(sessionLevelsGained))
         end
     end
 end)
 
 -- ==========================================
--- UI WINDOW SETUP
--- ==========================================
-local Window = Rayfield:CreateWindow({
-    Name = "Level Masters Script | v1.00", 
-    LoadingTitle = "Level Masters Loading", 
-    LoadingSubtitle = "By: Ash", 
-    ConfigurationSaving = {Enabled=false}, 
-    KeySystem = false
-})
-
--- TABS
-local AutoFarmTab = Window:CreateTab("Auto Farm", 4483362458)
-local SecurityTab = Window:CreateTab("Security", 4483362458)
-local PlayerTab = Window:CreateTab("Player Settings", 4483362458)
-local ESPTab = Window:CreateTab("ESP", 4483362458)
-local MiscTab = Window:CreateTab("Misc", 4483362458)
-
--- ==========================================
--- TAB 1: AUTO FARM
--- ==========================================
-AutoFarmTab:CreateSection("Combat Farm")
-
-local lastMeleeHit = 0
-local nextMagicCheck = 0
-local cachedMagicType = nil
-
-local FarmToggleObj = AutoFarmTab:CreateToggle({
-    Name = "Auto Farm All",
-    CurrentValue = false,
-    Flag = "AutoFarmAll",
-    Callback = function(Value)
-        Toggles.AutoFarmAll = Value
-        isFarming = Value
-        
-        if Value then
-            task.spawn(function()
-                task.wait(1) 
-                while Toggles.AutoFarmAll do
-                    pcall(function()
-                        local now = os.clock()
-                        
-                        -- Caching Engine: Only checks inventory once every 2 seconds
-                        if now >= nextMagicCheck then
-                            cachedMagicType = GetMagicTool()
-                            nextMagicCheck = now + 2
-                        end
-                        
-                        -- 1. Auto Hit (0.4s cooldown enforced)
-                        if now - lastMeleeHit >= 0.4 then
-                            local closestDummy = GetClosestDummy()
-                            if closestDummy then
-                                local dummyHum = closestDummy:FindFirstChild("Humanoid")
-                                if dummyHum then ReplicatedStorage.Events.Hit:FireServer(dummyHum) end
-                            end
-                            lastMeleeHit = now
-                        end
-                        
-                        -- 2. Auto Magic (Targeted Projectiles)
-                        if not ActiveDummyTarget then
-                            ActiveDummyTarget = DummyLocations[math.random(1, #DummyLocations)]
-                        end
-                        
-                        if cachedMagicType == "Fireball" and ReplicatedStorage:FindFirstChild("FireballReplicatedStorage") then
-                            ReplicatedStorage.FireballReplicatedStorage.RemoteEvent:FireServer(ActiveDummyTarget)
-                        elseif cachedMagicType == "Snowball" and ReplicatedStorage:FindFirstChild("SnowballReplicatedStorage") then
-                            ReplicatedStorage.SnowballReplicatedStorage.RemoteEvent:FireServer(ActiveDummyTarget)
-                        end
-                    end)
-                    task.wait(0.05) 
-                end
-            end)
-        end
-    end,
-})
-
-AutoFarmTab:CreateSection("Movement")
-
-local TeleportToggleObj
-TeleportToggleObj = AutoFarmTab:CreateToggle({
-    Name = "Teleport To Dummy",
-    CurrentValue = false,
-    Flag = "AutoTeleport",
-    Callback = function(Value)
-        if Value then
-            pcall(function()
-                if localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                    ActiveDummyTarget = DummyLocations[math.random(1, #DummyLocations)]
-                    localPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(ActiveDummyTarget) * CFrame.new(0, 0, 4)
-                end
-            end)
-            task.spawn(function()
-                task.wait(0.5)
-                TeleportToggleObj:Set(false)
-            end)
-        end
-    end,
-})
-
--- ==========================================
--- TAB 2: SECURITY
+-- TAB 3: SECURITY
 -- ==========================================
 SecurityTab:CreateSection("Connection Protections")
 
-local ReconToggleObj = SecurityTab:CreateToggle({
-    Name = "Auto Reconnect Server",
-    CurrentValue = false,
-    Flag = "Recon",
-    Callback = function(Value) Toggles.AutoReconnect = Value end
-})
-
-local AAFKToggleObj = SecurityTab:CreateToggle({
-    Name = "Anti AFK",
-    CurrentValue = false,
-    Flag = "AAFK",
-    Callback = function(Value) Toggles.AntiAFK = Value end
-})
+local ReconToggleObj = SecurityTab:CreateToggle({Name = "Auto Reconnect Server", CurrentValue = false, Flag = "Recon", Callback = function(Value) Toggles.AutoReconnect = Value end})
+local AAFKToggleObj = SecurityTab:CreateToggle({Name = "Anti AFK", CurrentValue = false, Flag = "AAFK", Callback = function(Value) Toggles.AntiAFK = Value end})
 
 SecurityTab:CreateSection("Performance Optimization")
-
 SecurityTab:CreateButton({
     Name = "Activate FPS Booster",
     Callback = function()
@@ -453,9 +485,7 @@ SecurityTab:CreateButton({
     end
 })
 
-localPlayer.Idled:Connect(function() 
-    if Toggles.AntiAFK then VirtualUser:CaptureController(); VirtualUser:ClickButton2(Vector2.new()) end 
-end)
+localPlayer.Idled:Connect(function() if Toggles.AntiAFK then VirtualUser:CaptureController(); VirtualUser:ClickButton2(Vector2.new()) end end)
 
 task.spawn(function()
     local reconnecting = false
@@ -466,14 +496,13 @@ task.spawn(function()
         WriteHopState()
         task.spawn(function() while task.wait(1) do pcall(function() TeleportService:Teleport(game.PlaceId, localPlayer) end) end end) 
     end
-    
     pcall(function() GuiService.ErrorMessageChanged:Connect(function() if Toggles.AutoReconnect then local err = GuiService:GetErrorCode(); if err and err.Value ~= 0 then forceRejoin() end end end) end)
     pcall(function() CoreGui.RobloxPromptGui.promptOverlay.ChildAdded:Connect(function(child) if Toggles.AutoReconnect and child.Name == "ErrorPrompt" then forceRejoin() end end) end)
     pcall(function() LogService.MessageOut:Connect(function(Message, Type) if Toggles.AutoReconnect and Type == Enum.MessageType.MessageError then local lMsg = string.lower(Message); if string.find(lMsg, "disconnect") or string.find(lMsg, "kicked") then forceRejoin() end end end) end)
 end)
 
 -- ==========================================
--- TAB 3: PLAYER SETTINGS
+-- TAB 4: PLAYER SETTINGS
 -- ==========================================
 PlayerTab:CreateSection("Movement Modifications")
 
@@ -482,31 +511,8 @@ local customJumpPower = 50
 local enforceMovement = false
 local isResetting = false
 
-local wsSlider = PlayerTab:CreateSlider({
-    Name = "Walkspeed",
-    Range = {1, 500},
-    Increment = 1,
-    Suffix = "Speed",
-    CurrentValue = 16,
-    Flag = "WalkspeedSlider",
-    Callback = function(Value)
-        customWalkSpeed = Value
-        if not isResetting then enforceMovement = true end
-    end,
-})
-
-local jpSlider = PlayerTab:CreateSlider({
-    Name = "Jump Power",
-    Range = {1, 500},
-    Increment = 1,
-    Suffix = "Power",
-    CurrentValue = 50,
-    Flag = "JumpPowerSlider",
-    Callback = function(Value)
-        customJumpPower = Value
-        if not isResetting then enforceMovement = true end
-    end,
-})
+local wsSlider = PlayerTab:CreateSlider({Name = "Walkspeed", Range = {1, 500}, Increment = 1, Suffix = "Speed", CurrentValue = 16, Flag = "WalkspeedSlider", Callback = function(Value) customWalkSpeed = Value; if not isResetting then enforceMovement = true end end})
+local jpSlider = PlayerTab:CreateSlider({Name = "Jump Power", Range = {1, 500}, Increment = 1, Suffix = "Power", CurrentValue = 50, Flag = "JumpPowerSlider", Callback = function(Value) customJumpPower = Value; if not isResetting then enforceMovement = true end end})
 
 PlayerTab:CreateButton({
     Name = "Reset Speed and Jump Power",
@@ -515,16 +521,9 @@ PlayerTab:CreateButton({
         enforceMovement = false
         if localPlayer.Character and localPlayer.Character:FindFirstChild("Humanoid") then 
             local hum = localPlayer.Character.Humanoid
-            hum.WalkSpeed = 16
-            hum.UseJumpPower = false 
-            hum.JumpPower = 50 
+            hum.WalkSpeed = 16; hum.UseJumpPower = false; hum.JumpPower = 50 
         end
-        task.spawn(function()
-            wsSlider:Set(16)
-            jpSlider:Set(50)
-            task.wait(0.1)
-            isResetting = false
-        end)
+        task.spawn(function() wsSlider:Set(16); jpSlider:Set(50); task.wait(0.1); isResetting = false end)
     end
 })
 
@@ -532,19 +531,18 @@ task.spawn(function()
     while task.wait(0.1) do 
         if enforceMovement and localPlayer.Character and localPlayer.Character:FindFirstChild("Humanoid") then 
             local hum = localPlayer.Character.Humanoid
-            hum.WalkSpeed = customWalkSpeed
-            hum.UseJumpPower = true
-            hum.JumpPower = customJumpPower 
+            hum.WalkSpeed = customWalkSpeed; hum.UseJumpPower = true; hum.JumpPower = customJumpPower 
         end 
     end 
 end)
 
 -- ==========================================
--- TAB 4: ESP
+-- TAB 5: ESP (OPTIMIZED ENGINE)
 -- ==========================================
 ESPTab:CreateSection("Player Visuals")
 
-local espThread, espObjects = nil, {}
+local espThread = nil
+local espObjects = {}
 local sharedVisualColor = Color3.fromRGB(255, 50, 50)
 
 local function ClearEsp() 
@@ -561,78 +559,66 @@ ESPTab:CreateToggle({
         if Value then
             espThread = task.spawn(function()
                 while Toggles.EspToggle do
-                    ClearEsp()
                     for _, plr in ipairs(Players:GetPlayers()) do
-                        if plr ~= localPlayer and plr.Character and plr.Character:FindFirstChild("Head") then
-                            pcall(function()
-                                local hl = Instance.new("Highlight", plr.Character)
-                                hl.FillColor = sharedVisualColor; hl.OutlineColor = sharedVisualColor; hl.FillTransparency = 0.5
+                        if plr ~= localPlayer and plr.Character and plr.Character:FindFirstChild("Head") and plr.Character:FindFirstChild("Humanoid") then
+                            local char = plr.Character
+                            local hum = char.Humanoid
+                            
+                            -- Optimized: Update existing UI instead of recreating every frame
+                            local hl = char:FindFirstChild("ESP_Highlight")
+                            if not hl then
+                                hl = Instance.new("Highlight", char)
+                                hl.Name = "ESP_Highlight"
+                                hl.FillTransparency = 0.5
                                 table.insert(espObjects, hl)
+                            end
+                            hl.FillColor = sharedVisualColor
+                            hl.OutlineColor = sharedVisualColor
+                            
+                            local bgui = char.Head:FindFirstChild("ESP_UI")
+                            local txt
+                            if not bgui then
+                                bgui = Instance.new("BillboardGui", char.Head)
+                                bgui.Name = "ESP_UI"
+                                bgui.Size = UDim2.new(0, 150, 0, 50)
+                                bgui.StudsOffset = Vector3.new(0, 3, 0)
+                                bgui.AlwaysOnTop = true
                                 
-                                local bgui = Instance.new("BillboardGui", plr.Character.Head)
-                                bgui.Size = UDim2.new(0, 150, 0, 50); bgui.StudsOffset = Vector3.new(0, 3, 0); bgui.AlwaysOnTop = true
-                                
-                                local txt = Instance.new("TextLabel", bgui)
-                                txt.Size = UDim2.new(1, 0, 1, 0); txt.BackgroundTransparency = 1; txt.TextColor3 = Color3.fromRGB(255, 255, 255)
-                                txt.TextSize = 13; txt.Font = Enum.Font.GothamBold
-                                
-                                local hum = plr.Character:FindFirstChild("Humanoid")
-                                local hp = hum and mFloor(hum.Health) or 0
-                                local maxHp = hum and mFloor(hum.MaxHealth) or 0
-                                local pLevel = plr:FindFirstChild("leaderstats") and plr.leaderstats:FindFirstChild("Level") and plr.leaderstats.Level.Value or 0
-                                
-                                txt.Text = string.format("%s\nLevel: %s\n%s / %s", plr.Name, FormatNum(pLevel), FormatNum(hp), FormatNum(maxHp))
+                                txt = Instance.new("TextLabel", bgui)
+                                txt.Name = "ESP_Text"
+                                txt.Size = UDim2.new(1, 0, 1, 0)
+                                txt.BackgroundTransparency = 1
+                                txt.TextColor3 = Color3.fromRGB(255, 255, 255)
+                                txt.TextSize = 13
+                                txt.Font = Enum.Font.GothamBold
                                 table.insert(espObjects, bgui)
-                            end)
+                            else
+                                txt = bgui.ESP_Text
+                            end
+                            
+                            local hp = mFloor(hum.Health)
+                            local maxHp = mFloor(hum.MaxHealth)
+                            local pLevel = plr:FindFirstChild("leaderstats") and plr.leaderstats:FindFirstChild("Level") and plr.leaderstats.Level.Value or 0
+                            txt.Text = string.format("%s\nLevel: %s\n%s / %s", plr.Name, FormatNum(pLevel), FormatNum(hp), FormatNum(maxHp))
                         end
                     end
-                    task.wait(1)
+                    task.wait(0.5) -- Faster updates, lower CPU load
                 end
             end)
-        else ClearEsp() end
+        else 
+            ClearEsp() 
+        end
     end
 })
 
-ESPTab:CreateToggle({
-    Name = "Rainbow ESP Colors",
-    CurrentValue = false,
-    Flag = "RainbowEsp",
-    Callback = function(Value) Toggles.RainbowEsp = Value end
-})
+ESPTab:CreateToggle({Name = "Rainbow ESP Colors", CurrentValue = false, Flag = "RainbowEsp", Callback = function(Value) Toggles.RainbowEsp = Value end})
 
 RunService.RenderStepped:Connect(function() 
     if Toggles.RainbowEsp then sharedVisualColor = Color3.fromHSV(os.clock() % 4 / 4, 1, 1) else sharedVisualColor = Color3.fromRGB(255, 50, 50) end 
 end)
 
 -- ==========================================
--- TAB 5: MISC
+-- TAB 6: MISC
 -- ==========================================
 MiscTab:CreateSection("Utility Actions")
-
-MiscTab:CreateButton({Name = "Open / Close UI Tracker", Callback = function() if trackerGui then trackerGui.Enabled = not trackerGui.Enabled end end})
-MiscTab:CreateButton({Name = "Execute Infinite Yield", Callback = function() loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-Infinite-yield-73483"))() end})
-MiscTab:CreateButton({Name = "Destroy Script and UI", Callback = function() isFarming = false; Toggles = {}; ClearEsp(); if trackerGui then trackerGui:Destroy() end; Rayfield:Destroy() end})
-
--- ==========================================
--- AUTO RESUME EXECUTION
--- ==========================================
-if shouldResumeFarm then
-    task.spawn(function()
-        if not game:IsLoaded() then game.Loaded:Wait() end
-        local char = localPlayer.Character or localPlayer.CharacterAdded:Wait()
-        char:WaitForChild("HumanoidRootPart", 9e9)
-        
-        -- STRICT 20 SECOND WAIT TO ENSURE FULL GAME LOAD
-        task.wait(20) 
-        
-        pcall(function() if FarmToggleObj then FarmToggleObj:Set(true) end end)
-        task.wait(0.2)
-        pcall(function() if TeleportToggleObj then TeleportToggleObj:Set(true) end end)
-        task.wait(0.2)
-        pcall(function() if ReconToggleObj then ReconToggleObj:Set(true) end end)
-        task.wait(0.2)
-        pcall(function() if AAFKToggleObj then AAFKToggleObj:Set(true) end end)
-        
-        SendWebhookPing("🔄 REJOIN SUCCESSFUL", "Account has fully reconnected and resumed farming after the 20s delay.", tonumber(0x00FF00), false, false, false)
-    end)
-end
+MiscTab:Create
