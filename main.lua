@@ -621,4 +621,29 @@ end)
 -- TAB 6: MISC
 -- ==========================================
 MiscTab:CreateSection("Utility Actions")
-MiscTab:Create
+MiscTab:CreateButton({Name = "Open / Close UI Tracker", Callback = function() if trackerGui then trackerGui.Enabled = not trackerGui.Enabled end end})
+MiscTab:CreateButton({Name = "Execute Infinite Yield", Callback = function() loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-Infinite-yield-73483"))() end})
+MiscTab:CreateButton({Name = "Destroy Script and UI", Callback = function() isFarming = false; Toggles = {}; ClearEsp(); if trackerGui then trackerGui:Destroy() end; Rayfield:Destroy() end})
+
+-- ==========================================
+-- AUTO RESUME EXECUTION
+-- ==========================================
+if shouldResumeFarm then
+    task.spawn(function()
+        if not game:IsLoaded() then game.Loaded:Wait() end
+        local char = localPlayer.Character or localPlayer.CharacterAdded:Wait()
+        char:WaitForChild("HumanoidRootPart", 9e9)
+        
+        task.wait(20) 
+        
+        pcall(function() if FarmToggleObj then FarmToggleObj:Set(true) end end)
+        task.wait(0.2)
+        pcall(function() if TeleportToggleObj then TeleportToggleObj:Set(true) end end)
+        task.wait(0.2)
+        pcall(function() if ReconToggleObj then ReconToggleObj:Set(true) end end)
+        task.wait(0.2)
+        pcall(function() if AAFKToggleObj then AAFKToggleObj:Set(true) end end)
+        
+        SendWebhookPing("🔄 REJOIN SUCCESSFUL", "Account has fully reconnected and resumed farming after the 20s delay.", tonumber(0x00FF00), false, false, false)
+    end)
+end
