@@ -102,6 +102,18 @@ end
 -- ==========================================
 -- OPTIMIZED UTILITY FUNCTIONS
 -- ==========================================
+local function OptimizeFPS()
+    pcall(function()
+        settings().Rendering.QualityLevel = 1
+        game:GetService("Lighting").GlobalShadows = false
+        game:GetService("Lighting").FogEnd = 9e9
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v:IsA("BasePart") then v.Material = Enum.Material.SmoothPlastic; v.Reflectance = 0
+            elseif v:IsA("Decal") or v:IsA("Texture") or v:IsA("ParticleEmitter") or v:IsA("PostEffect") or v:IsA("Atmosphere") or v:IsA("Sky") then v:Destroy() end
+        end
+    end)
+end
+
 local function FormatNum(value)
     local n = mFloor(tonumber(value) or 0)
     local formatted = tostring(n)
@@ -152,7 +164,7 @@ local function GetAndEquipMagicTool(allowSnowball)
     end
 
     scanFolder(char)
-    if not fireballTool then scanFolder(bp) end -- Only scan backpack if not in hand
+    if not fireballTool then scanFolder(bp) end
 
     local toolToUse = fireballTool or (allowSnowball and snowballTool)
 
@@ -170,7 +182,7 @@ end
 local function GetClosestDummy()
     if not dummysFolder then return nil end
     local closestDummy = nil
-    local shortestDist = 50000 -- Optimization: reasonable max distance
+    local shortestDist = 50000 
     local myHrp = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart")
     
     if myHrp then
@@ -190,7 +202,7 @@ local function GetClosestDummy()
 end
 
 -- ==========================================
--- DISCORD WEBHOOK ENGINE (REWRITTEN)
+-- DISCORD WEBHOOK ENGINE
 -- ==========================================
 local function SendWebhookPing(title, desc, color, pingUsers, reportType)
     if UserWebhookURL == "" then return end
@@ -216,12 +228,10 @@ local function SendWebhookPing(title, desc, color, pingUsers, reportType)
     if reportType == "Execution" then
         table.insert(fields, {["name"] = "Total Executions", ["value"] = tostring(trackerData.TotalExecutions), ["inline"] = true})
         table.insert(fields, {["name"] = "Lifetime Farmed", ["value"] = FormatLifetime(trackerData.LifetimeFarmingSeconds), ["inline"] = true})
-    
-    elseif reportType == "Periodic" or reportType == "Daily" then
+    elseif reportType == "Periodic" or reportType == "Daily" or reportType == "Disconnect" or reportType == "Rejoin" then
         table.insert(fields, {["name"] = "Time Farmed Session", ["value"] = tStr, ["inline"] = true})
         table.insert(fields, {["name"] = "Current LPH", ["value"] = string.format("%.1f", lph), ["inline"] = true})
         
-        -- Calculate live rating
         local currentGain = trackerData.LevelsGained
         local histAvg = GetHistoricalAverage()
         local rating = "Average"
@@ -252,13 +262,11 @@ local function SendWebhookPing(title, desc, color, pingUsers, reportType)
     end
 end
 
--- INITIAL EXECUTION WEBHOOK
 task.spawn(function()
     task.wait(2)
     SendWebhookPing("🚀 SCRIPT EXECUTED", "Level Masters Script has been successfully Executed.", tonumber(0x8A2BE2), false, "Execution")
 end)
 
--- 10-MINUTE PERIODIC WEBHOOK
 task.spawn(function()
     while task.wait(600) do
         if Toggles.AutoFarmAll and sessionFarmingSeconds > 0 then
@@ -278,7 +286,6 @@ local Window = Rayfield:CreateWindow({
     KeySystem = false
 })
 
--- TABS (Ordered Most Important to Least)
 local AutoFarmTab = Window:CreateTab("Auto Farm", 4483362458)
 local AnalyticsTab = Window:CreateTab("Level Analytics", 4483362458)
 local SecurityTab = Window:CreateTab("Security", 4483362458)
@@ -294,7 +301,7 @@ AutoFarmTab:CreateSection("Combat Farm")
 local lastMeleeHit = 0
 local nextMagicCheck = 0
 local cachedMagicType = nil
-local customHitSpeed = 0.6 -- Default 
+local customHitSpeed = 0.5 
 
 local FarmToggleObj = AutoFarmTab:CreateToggle({
     Name = "Auto Farm All",
@@ -310,19 +317,16 @@ local FarmToggleObj = AutoFarmTab:CreateToggle({
                 while Toggles.AutoFarmAll do
                     local now = os.clock()
                     
-                    -- Tool Equipping Engine
                     if now >= nextMagicCheck then
                         local allowSnowball = (now - autoFarmStartTime) >= 6
                         cachedMagicType = GetAndEquipMagicTool(allowSnowball)
                         nextMagicCheck = now + 1
                     end
                     
-                    -- Target Logic
                     if not ActiveDummyTarget then
                         ActiveDummyTarget = DummyLocations[math.random(1, #DummyLocations)]
                     end
                     
-                    -- 1. Auto Hit
                     if now - lastMeleeHit >= customHitSpeed then
                         local closestDummy = GetClosestDummy()
                         if closestDummy then
@@ -334,30 +338,49 @@ local FarmToggleObj = AutoFarmTab:CreateToggle({
                         lastMeleeHit = now
                     end
                     
-                    -- 2. Auto Magic
                     if cachedMagicType == "Fireball" and fbRemote then
                         fbRemote:FireServer(ActiveDummyTarget)
                     elseif cachedMagicType == "Snowball" and sbRemote then
                         sbRemote:FireServer(ActiveDummyTarget)
                     end
                     
-                    task.wait(0.03) 
+                    RunService.Heartbeat:Wait() 
                 end
             end)
         end
     end,
 })
 
-AutoFarmTab:CreateSlider({
+local HitSpeedSliderObj = AutoFarmTab:CreateSlider({
     Name = "Melee Hit Cooldown",
     Range = {0.1, 1.0},
     Increment = 0.05,
     Suffix = "Seconds",
-    CurrentValue = 0.6,
+    CurrentValue = 0.5,
     Flag = "HitSpeedSlider",
     Callback = function(Value)
         customHitSpeed = Value
     end,
+})
+
+AutoFarmTab:CreateButton({
+    Name = "Set Fastest Hit Speed",
+    Callback = function()
+        customHitSpeed = 0.1
+        if HitSpeedSliderObj then
+            HitSpeedSliderObj:Set(0.1)
+        end
+    end
+})
+
+AutoFarmTab:CreateButton({
+    Name = "Reset Normal Hit Speed",
+    Callback = function()
+        customHitSpeed = 0.5
+        if HitSpeedSliderObj then
+            HitSpeedSliderObj:Set(0.5)
+        end
+    end
 })
 
 AutoFarmTab:CreateSection("Movement")
@@ -457,7 +480,6 @@ task.spawn(function()
             local lph = currentLvlPerSec * 3600
             
             statsLabel.Text = string.format("Status: ACTIVE\n\nTime Farmed This Session: %s\nLevels Gained: %s\nLPM: %.1f\nLPH: %.1f", tStr, FormatNum(sessionLevelsGained), lpm, lph)
-                
             SessionStatsPara:Set({Title = "Live Tracking", Content = string.format("Time Farmed: %s\nLevels Gained: %s\nLPM: %.1f\nLPH: %.1f", tStr, FormatNum(sessionLevelsGained), lpm, lph)})
             ProjPara:Set({Title = "Future Projections", Content = string.format("1 Day Gain: %s\n3 Days Gain: %s\n1 Week Gain: %s\n1 Month Gain: %s", FormatNum(lph * 24), FormatNum(lph * 72), FormatNum(lph * 168), FormatNum(lph * 720))})
         else
@@ -478,15 +500,7 @@ SecurityTab:CreateSection("Performance Optimization")
 SecurityTab:CreateButton({
     Name = "Activate FPS Booster",
     Callback = function()
-        pcall(function()
-            settings().Rendering.QualityLevel = 1
-            game:GetService("Lighting").GlobalShadows = false
-            game:GetService("Lighting").FogEnd = 9e9
-            for _, v in pairs(workspace:GetDescendants()) do
-                if v:IsA("BasePart") then v.Material = Enum.Material.SmoothPlastic; v.Reflectance = 0
-                elseif v:IsA("Decal") or v:IsA("Texture") or v:IsA("ParticleEmitter") or v:IsA("PostEffect") or v:IsA("Atmosphere") or v:IsA("Sky") then v:Destroy() end
-            end
-        end)
+        OptimizeFPS()
     end
 })
 
@@ -542,7 +556,7 @@ task.spawn(function()
 end)
 
 -- ==========================================
--- TAB 5: ESP (OPTIMIZED ENGINE)
+-- TAB 5: ESP 
 -- ==========================================
 ESPTab:CreateSection("Player Visuals")
 
@@ -570,7 +584,6 @@ ESPTab:CreateToggle({
                             local char = plr.Character
                             local hum = char.Humanoid
                             
-                            -- Optimized: Update existing UI instead of recreating every frame
                             local hl = char:FindFirstChild("ESP_Highlight")
                             if not hl then
                                 hl = Instance.new("Highlight", char)
@@ -608,7 +621,7 @@ ESPTab:CreateToggle({
                             txt.Text = string.format("%s\nLevel: %s\n%s / %s", plr.Name, FormatNum(pLevel), FormatNum(hp), FormatNum(maxHp))
                         end
                     end
-                    task.wait(0.5) -- Faster updates, lower CPU load
+                    task.wait(0.5) 
                 end
             end)
         else 
@@ -641,6 +654,13 @@ if shouldResumeFarm then
         char:WaitForChild("HumanoidRootPart", 9e9)
         
         task.wait(20) 
+        
+        -- Engage Auto-Resume Protections
+        OptimizeFPS()
+        
+        -- Explicitly lock speed to safe defaults so it doesn't instantly flag upon rejoin
+        customHitSpeed = 0.5
+        if HitSpeedSliderObj then HitSpeedSliderObj:Set(0.5) end
         
         pcall(function() if FarmToggleObj then FarmToggleObj:Set(true) end end)
         task.wait(0.2)
