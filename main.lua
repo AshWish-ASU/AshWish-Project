@@ -190,9 +190,9 @@ local function GetClosestDummy()
 end
 
 -- ==========================================
--- DISCORD WEBHOOK ENGINE
+-- DISCORD WEBHOOK ENGINE (REWRITTEN)
 -- ==========================================
-local function SendWebhookPing(title, desc, color, pingUsers, isDailyReport, isExecution)
+local function SendWebhookPing(title, desc, color, pingUsers, reportType)
     if UserWebhookURL == "" then return end
     
     local platformStr = isPC and "PC Desktop" or "Mobile Device"
@@ -210,26 +210,31 @@ local function SendWebhookPing(title, desc, color, pingUsers, isDailyReport, isE
             }
         }}
     }
+    
+    local fields = payload.embeds[1].fields
 
-    if isExecution then
-        table.insert(payload.embeds[1].fields, {["name"] = "Total Executions", ["value"] = tostring(trackerData.TotalExecutions), ["inline"] = true})
-        table.insert(payload.embeds[1].fields, {["name"] = "Lifetime Farmed", ["value"] = FormatLifetime(trackerData.LifetimeFarmingSeconds), ["inline"] = true})
-    else
-        table.insert(payload.embeds[1].fields, {["name"] = "Time Farmed Session", ["value"] = tStr, ["inline"] = true})
-        table.insert(payload.embeds[1].fields, {["name"] = "Current LPH", ["value"] = string.format("%.1f", lph), ["inline"] = true})
-    end
-
-    if isDailyReport then
-        local dailyGain = trackerData.LevelsGained
+    if reportType == "Execution" then
+        table.insert(fields, {["name"] = "Total Executions", ["value"] = tostring(trackerData.TotalExecutions), ["inline"] = true})
+        table.insert(fields, {["name"] = "Lifetime Farmed", ["value"] = FormatLifetime(trackerData.LifetimeFarmingSeconds), ["inline"] = true})
+    
+    elseif reportType == "Periodic" or reportType == "Daily" then
+        table.insert(fields, {["name"] = "Time Farmed Session", ["value"] = tStr, ["inline"] = true})
+        table.insert(fields, {["name"] = "Current LPH", ["value"] = string.format("%.1f", lph), ["inline"] = true})
+        
+        -- Calculate live rating
+        local currentGain = trackerData.LevelsGained
         local histAvg = GetHistoricalAverage()
         local rating = "Average"
         
-        if dailyGain > (histAvg * 1.1) then rating = "Above Average"
-        elseif dailyGain < (histAvg * 0.9) then rating = "Below Average"
+        if currentGain > (histAvg * 1.1) then rating = "Above Average"
+        elseif currentGain < (histAvg * 0.9) then rating = "Below Average"
         end
 
-        table.insert(payload.embeds[1].fields, {["name"] = "24 Hour Gain", ["value"] = tostring(dailyGain), ["inline"] = true})
-        table.insert(payload.embeds[1].fields, {["name"] = "Daily Rating", ["value"] = rating, ["inline"] = true})
+        table.insert(fields, {["name"] = "Current Rating", ["value"] = rating, ["inline"] = true})
+
+        if reportType == "Daily" then
+            table.insert(fields, {["name"] = "24 Hour Gain", ["value"] = tostring(currentGain), ["inline"] = true})
+        end
     end
 
     if pingUsers then payload["content"] = DiscordPingIDs .. " **SYSTEM ALERT**" end
@@ -250,14 +255,14 @@ end
 -- INITIAL EXECUTION WEBHOOK
 task.spawn(function()
     task.wait(2)
-    SendWebhookPing("🚀 SCRIPT EXECUTED", "Level Masters Script has been successfully Executed.", tonumber(0x8A2BE2), false, false, true)
+    SendWebhookPing("🚀 SCRIPT EXECUTED", "Level Masters Script has been successfully Executed.", tonumber(0x8A2BE2), false, "Execution")
 end)
 
 -- 10-MINUTE PERIODIC WEBHOOK
 task.spawn(function()
     while task.wait(600) do
-        if isFarming and sessionFarmingSeconds > 0 then
-            SendWebhookPing("⏱️ 10 MINUTE STATUS UPDATE", "Periodic progress report for the current session.", tonumber(0x00A2FF), false, false, false)
+        if Toggles.AutoFarmAll and sessionFarmingSeconds > 0 then
+            SendWebhookPing("⏱️ 10 MINUTE STATUS UPDATE", "Periodic progress report for the current session.", tonumber(0x00A2FF), false, "Periodic")
         end
     end
 end)
@@ -273,7 +278,7 @@ local Window = Rayfield:CreateWindow({
     KeySystem = false
 })
 
--- TABS
+-- TABS (Ordered Most Important to Least)
 local AutoFarmTab = Window:CreateTab("Auto Farm", 4483362458)
 local AnalyticsTab = Window:CreateTab("Level Analytics", 4483362458)
 local SecurityTab = Window:CreateTab("Security", 4483362458)
@@ -438,7 +443,7 @@ task.spawn(function()
             trackerData.LifetimeFarmingSeconds = trackerData.LifetimeFarmingSeconds + 1
 
             if trackerData.FarmingSeconds >= 86400 then
-                SendWebhookPing("📅 24 HOUR FARM REPORT", "A full 24 hours of grinding has been completed.", tonumber(0x00FFFF), true, true, false)
+                SendWebhookPing("📅 24 HOUR FARM REPORT", "A full 24 hours of grinding has been completed.", tonumber(0x00FFFF), true, "Daily")
                 table.insert(trackerData.Logs, 1, trackerData.LevelsGained)
                 if #trackerData.Logs > 10 then table.remove(trackerData.Logs, 11) end
                 trackerData.FarmingSeconds = 0
@@ -492,7 +497,7 @@ task.spawn(function()
     local function forceRejoin() 
         if reconnecting then return end
         reconnecting = true
-        SendWebhookPing("🚨 DISCONNECT DETECTED", "Account lost connection. Attempting to rejoin.", tonumber(0xFFA500), true, false, false)
+        SendWebhookPing("🚨 DISCONNECT DETECTED", "Account lost connection. Attempting to rejoin.", tonumber(0xFFA500), true, "Disconnect")
         WriteHopState()
         task.spawn(function() while task.wait(1) do pcall(function() TeleportService:Teleport(game.PlaceId, localPlayer) end) end end) 
     end
@@ -559,6 +564,7 @@ ESPTab:CreateToggle({
         if Value then
             espThread = task.spawn(function()
                 while Toggles.EspToggle do
+                    ClearEsp()
                     for _, plr in ipairs(Players:GetPlayers()) do
                         if plr ~= localPlayer and plr.Character and plr.Character:FindFirstChild("Head") and plr.Character:FindFirstChild("Humanoid") then
                             local char = plr.Character
@@ -644,6 +650,6 @@ if shouldResumeFarm then
         task.wait(0.2)
         pcall(function() if AAFKToggleObj then AAFKToggleObj:Set(true) end end)
         
-        SendWebhookPing("🔄 REJOIN SUCCESSFUL", "Account has fully reconnected and resumed farming after the 20s delay.", tonumber(0x00FF00), false, false, false)
+        SendWebhookPing("🔄 REJOIN SUCCESSFUL", "Account has fully reconnected and resumed farming after the 20s delay.", tonumber(0x00FF00), false, "Rejoin")
     end)
 end
