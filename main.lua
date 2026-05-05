@@ -74,11 +74,19 @@ trackerData.TotalExecutions = trackerData.TotalExecutions + 1
 SaveTrackerData()
 
 local function GetHistoricalAverage()
-    if #trackerData.Logs == 0 then return 1000 end
+    if #trackerData.Logs == 0 then return 0 end
     local sum = 0
-    local count = math.min(#trackerData.Logs, 5)
-    for i = 1, count do sum = sum + (tonumber(trackerData.Logs[i]) or 0) end
-    return sum / count
+    local validLogs = 0
+    -- Only average the last 5 logs that had actual meaningful farming time (to prevent 2-minute test sessions from ruining the math)
+    for i = 1, math.min(#trackerData.Logs, 5) do 
+        local logVal = tonumber(trackerData.Logs[i]) or 0
+        if logVal > 500 then -- Assuming 500 is a baseline for a real session
+            sum = sum + logVal
+            validLogs = validLogs + 1
+        end
+    end
+    if validLogs == 0 then return 0 end
+    return sum / validLogs
 end
 
 -- ==========================================
@@ -236,8 +244,13 @@ local function SendWebhookPing(title, desc, color, pingUsers, reportType)
         local histAvg = GetHistoricalAverage()
         local rating = "Average"
         
-        if currentGain > (histAvg * 1.1) then rating = "Above Average"
-        elseif currentGain < (histAvg * 0.9) then rating = "Below Average"
+        -- Smarter rating logic
+        if histAvg > 0 then
+            if currentGain > (histAvg * 1.1) then rating = "Above Average"
+            elseif currentGain < (histAvg * 0.9) then rating = "Below Average"
+            end
+        else
+            rating = "Establishing Baseline..."
         end
 
         table.insert(fields, {["name"] = "Current Rating", ["value"] = rating, ["inline"] = true})
@@ -268,9 +281,12 @@ task.spawn(function()
 end)
 
 task.spawn(function()
-    while task.wait(600) do
-        if Toggles.AutoFarmAll and sessionFarmingSeconds > 0 then
-            SendWebhookPing("⏱️ 10 MINUTE STATUS UPDATE", "Periodic progress report for the current session.", tonumber(0x00A2FF), false, "Periodic")
+    while task.wait(1) do
+        -- Check every second, but only fire when perfectly aligned to 10 minutes
+        if sessionFarmingSeconds > 0 and sessionFarmingSeconds % 600 == 0 then
+             if Toggles.AutoFarmAll then
+                 SendWebhookPing("⏱️ 10 MINUTE STATUS UPDATE", "Periodic progress report for the current session.", tonumber(0x00A2FF), false, "Periodic")
+             end
         end
     end
 end)
@@ -301,7 +317,7 @@ AutoFarmTab:CreateSection("Combat Farm")
 local lastMeleeHit = 0
 local nextMagicCheck = 0
 local cachedMagicType = nil
-local customHitSpeed = 0.4 
+local customHitSpeed = 0.5 
 
 local FarmToggleObj = AutoFarmTab:CreateToggle({
     Name = "Auto Farm All",
@@ -356,7 +372,7 @@ local HitSpeedSliderObj = AutoFarmTab:CreateSlider({
     Range = {0.1, 1.0},
     Increment = 0.05,
     Suffix = "Seconds",
-    CurrentValue = 0.4,
+    CurrentValue = 0.5,
     Flag = "HitSpeedSlider",
     Callback = function(Value)
         customHitSpeed = Value
@@ -376,9 +392,9 @@ AutoFarmTab:CreateButton({
 AutoFarmTab:CreateButton({
     Name = "Reset Normal Hit Speed",
     Callback = function()
-        customHitSpeed = 0.4
+        customHitSpeed = 0.5
         if HitSpeedSliderObj then
-            HitSpeedSliderObj:Set(0.4)
+            HitSpeedSliderObj:Set(0.5)
         end
     end
 })
@@ -659,8 +675,8 @@ if shouldResumeFarm then
         OptimizeFPS()
         
         -- Explicitly lock speed to safe defaults so it doesn't instantly flag upon rejoin
-        customHitSpeed = 0.4
-        if HitSpeedSliderObj then HitSpeedSliderObj:Set(0.4) end
+        customHitSpeed = 0.5
+        if HitSpeedSliderObj then HitSpeedSliderObj:Set(0.5) end
         
         pcall(function() if FarmToggleObj then FarmToggleObj:Set(true) end end)
         task.wait(0.2)
@@ -671,5 +687,8 @@ if shouldResumeFarm then
         pcall(function() if AAFKToggleObj then AAFKToggleObj:Set(true) end end)
         
         SendWebhookPing("🔄 REJOIN SUCCESSFUL", "Account has fully reconnected and resumed farming after the 7s delay.", tonumber(0x00FF00), false, "Rejoin")
+        
+        -- Auto Hide UI
+        if Window and Window.Hide then Window:Hide() end
     end)
 end
