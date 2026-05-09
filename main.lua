@@ -1,5 +1,6 @@
 -- [[ LEVEL MASTERY SCRIPT | V1.00 ]]
 -- BRANDING: BY: ASH
+-- ENGINE: MAXIMUM OVERDRIVE INTEGRATED
 
 -- Global Kill-Switch to prevent overlap errors when re-executing
 if _G.LevelMasteryRunning then _G.LevelMasteryRunning = false; task.wait(0.5) end
@@ -15,12 +16,10 @@ local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local GuiService = game:GetService("GuiService")
-local LogService = game:GetService("LogService")
 local localPlayer = Players.LocalPlayer
 
--- Micro-Optimizations: Localizing global math and wait functions saves massive CPU load in fast loops
+-- Micro-Optimizations: Localizing global functions saves massive CPU load in fast loops
 local mFloor = math.floor
-local mClamp = math.clamp
 local mRand = math.random
 local mMin = math.min
 local osClock = os.clock
@@ -278,12 +277,12 @@ local ESPTab = Window:CreateTab("ESP", 4483362458)
 local MiscTab = Window:CreateTab("Misc", 4483362458)
 
 -- ==========================================
--- TAB 1: AUTO FARM
+-- TAB 1: AUTO FARM (OVERDRIVE)
 -- ==========================================
 AutoFarmTab:CreateSection("Combat Farm")
 
-local lastMeleeHit, nextMagicCheck, cachedMagicType, customHitSpeed = 0, 0, nil, 0.6 
-local HitSpeedSliderObj
+local lastMeleeHit, nextMagicCheck, cachedMagicType = 0, 0, nil
+local OverdriveSpeed = 0.05 
 
 local FarmCombatToggleObj = AutoFarmTab:CreateToggle({
     Name = "Auto Farm Combat",
@@ -296,32 +295,57 @@ local FarmCombatToggleObj = AutoFarmTab:CreateToggle({
             tSpawn(function()
                 while _G.LevelMasteryRunning and Toggles.AutoFarmCombat do
                     local now = osClock()
-                    if now >= nextMagicCheck then
-                        cachedMagicType = GetAndEquipMagicTool((now - autoFarmStartTime) >= 6)
-                        nextMagicCheck = now + 1
+                    
+                    if not ActiveDummyTarget then 
+                        ActiveDummyTarget = DummyLocations[mRand(1, #DummyLocations)] 
                     end
-                    if not ActiveDummyTarget then ActiveDummyTarget = DummyLocations[mRand(1, #DummyLocations)] end
-                    if now - lastMeleeHit >= customHitSpeed then
-                        local closest = GetClosestDummy()
-                        if closest and hitRemote then hitRemote:FireServer(closest.Hum) end
-                        lastMeleeHit = now
+                    
+                    local closest = GetClosestDummy()
+                    if closest then
+                        -- Melee logic: Firing as fast as the slider permits. If set to 0, fires every tick.
+                        if now - lastMeleeHit >= OverdriveSpeed then
+                            if hitRemote then hitRemote:FireServer(closest.Hum) end
+                            lastMeleeHit = now
+                        end
+                        
+                        -- Magic logic
+                        if now >= nextMagicCheck then
+                            cachedMagicType = GetAndEquipMagicTool(true)
+                            nextMagicCheck = now + 1
+                        end
+                        
+                        if cachedMagicType == "Fireball" and fbRemote then 
+                            fbRemote:FireServer(ActiveDummyTarget)
+                        elseif cachedMagicType == "Snowball" and sbRemote then 
+                            sbRemote:FireServer(ActiveDummyTarget) 
+                        end
                     end
-                    if cachedMagicType == "Fireball" and fbRemote then fbRemote:FireServer(ActiveDummyTarget)
-                    elseif cachedMagicType == "Snowball" and sbRemote then sbRemote:FireServer(ActiveDummyTarget) end
-                    RunService.Heartbeat:Wait() 
+                    
+                    tWait() -- Keep engine stable while looping
                 end
             end)
         end
     end,
 })
 
-HitSpeedSliderObj = AutoFarmTab:CreateSlider({
-    Name = "Melee Hit Cooldown", Range = {0.1, 1.0}, Increment = 0.05, Suffix = "Seconds", CurrentValue = 0.6, Flag = "HitSpeedSlider",
-    Callback = function(Value) customHitSpeed = Value end,
+local HitSpeedSliderObj = AutoFarmTab:CreateSlider({
+    Name = "Overdrive Hit Speed", 
+    Range = {0.0, 1.0}, 
+    Increment = 0.01, 
+    Suffix = "s", 
+    CurrentValue = 0.05, 
+    Flag = "HitSpeedSlider",
+    Callback = function(Value) OverdriveSpeed = Value end,
 })
 
-AutoFarmTab:CreateButton({Name = "Set Fastest Hit Speed", Callback = function() customHitSpeed = 0.1; if HitSpeedSliderObj then HitSpeedSliderObj:Set(0.1) end end})
-AutoFarmTab:CreateButton({Name = "Reset Normal Hit Speed", Callback = function() customHitSpeed = 0.6; if HitSpeedSliderObj then HitSpeedSliderObj:Set(0.6) end end})
+AutoFarmTab:CreateButton({
+    Name = "🔥 ENABLE MAXIMUM OVERDRIVE (0.00s)", 
+    Callback = function() 
+        OverdriveSpeed = 0
+        if HitSpeedSliderObj then HitSpeedSliderObj:Set(0) end
+        Rayfield:Notify({Title = "Speed Alert", Content = "Running at MAX SPEED. If you stop gaining levels, increase slider to 0.05s.", Duration = 5})
+    end
+})
 
 AutoFarmTab:CreateSection("Movement")
 local TeleportToggleObj = AutoFarmTab:CreateToggle({
@@ -339,7 +363,7 @@ local TeleportToggleObj = AutoFarmTab:CreateToggle({
 
 AutoFarmTab:CreateParagraph({
     Title = "Feature Notes", 
-    Content = "• Death Recovery is permanently active. If you die while toggles are on, you will auto-teleport back to your dummy."
+    Content = "• Overdrive speed set to 0 bypasses all internal cooldowns.\n• Death Recovery is permanently active."
 })
 
 -- ==========================================
@@ -471,8 +495,8 @@ if shouldResumeFarm then
         localPlayer.CharacterAdded:Wait():WaitForChild("HumanoidRootPart", 9e9); tWait(7) 
         
         OptimizeFPS()
-        customHitSpeed = 0.6
-        if HitSpeedSliderObj then HitSpeedSliderObj:Set(0.6) end
+        OverdriveSpeed = 0.05
+        if HitSpeedSliderObj then HitSpeedSliderObj:Set(0.05) end
         
         pcall(function() 
             if FarmCombatToggleObj then FarmCombatToggleObj:Set(true) end; tWait(0.2); 
